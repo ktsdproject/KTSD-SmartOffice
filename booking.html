@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>จองห้องประชุม - Klongtoei Smart District</title>
+    <title>จองห้องประชุม - K.T.S.D.</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -21,22 +21,23 @@
         .btn-submit:disabled { background: #b2bec3; cursor: not-allowed; }
         
         .btn-back { background: #636e72; margin-top: 10px; }
-        .btn-back:hover { background: #2d3436; }
-        
+        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn-info { flex: 1; padding: 10px; background: #74b9ff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .btn-info:hover { background: #0984e3; }
+
         #status { text-align: center; margin-top: 15px; font-size: 14px; min-height: 20px; }
         .error { color: #d63031; }
-        .success { color: #00b894; }
-
+        
+        /* Modal for Schedule */
+        #scheduleModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #aaa; }
+        .schedule-item { background: #f1f2f6; padding: 10px; border-radius: 5px; margin-bottom: 8px; border-left: 4px solid #0984e3; font-size: 14px; }
+        
         /* Loading Overlay */
-        #loadingOverlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.8); z-index: 999;
-            justify-content: center; align-items: center; flex-direction: column;
-        }
-        .spinner {
-            border: 5px solid #f3f3f3; border-top: 5px solid #0984e3; border-radius: 50%;
-            width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px;
-        }
+        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 999; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #0984e3; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -47,10 +48,27 @@
     <div id="loadingText">กำลังประมวลผล...</div>
 </div>
 
+<div id="scheduleModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin:0;">📅 ตารางการจอง</h3>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        <div id="scheduleList">
+            <p style="text-align:center; color:#aaa;">กำลังโหลดข้อมูล...</p>
+        </div>
+    </div>
+</div>
+
 <div class="container">
     <h2>📅 จองห้องประชุม</h2>
-    <p id="welcomeMsg" style="text-align: center; font-size: 14px; color: #666; margin-bottom: 20px;">...</p>
+    <p id="welcomeMsg" style="text-align: center; font-size: 14px; color: #666; margin-bottom: 15px;">...</p>
     
+    <div class="btn-group">
+        <button type="button" class="btn-info" onclick="viewSchedule('room')">🔍 ตารางห้องประชุม</button>
+        <button type="button" class="btn-info" onclick="viewSchedule('car')">🚐 ตารางจองรถ</button>
+    </div>
+
     <form id="bookingForm">
         <div class="form-group">
             <label>เลือกห้องประชุม / ยานพาหนะ</label>
@@ -70,7 +88,7 @@
         <div class="form-group">
             <label>แนบหนังสือขอใช้ (PDF/รูปภาพ)</label>
             <input type="file" id="fileInput" accept="application/pdf, image/jpeg, image/png">
-            <small style="color: #e17055; font-size: 12px;">* ขนาดไม่เกิน 5MB (ถ้าไม่มีไม่ต้องแนบ)</small>
+            <small style="color: #e17055; font-size: 12px;">* ขนาดไม่เกิน 3MB</small>
         </div>
 
         <div class="form-group">
@@ -97,139 +115,156 @@
 </div>
 
 <script>
-    // --- 1. CONFIGURATION (ตั้งค่าระบบ) ---
-    const LIFF_ID = '2008629776-KXngaa2q'; // <-- LIFF ID ของท่าน
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec'; // <-- Web App URL ของท่าน
+    // --- CONFIGURATION ---
+    const LIFF_ID = '2008629776-KXngaa2q'; // <-- ใส่ LIFF ID เดิม
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec'; // <-- ใส่ Web App URL เดิม
 
-    // --- 2. GLOBAL VARIABLES ---
     let userProfile = null;
 
-    // --- 3. HELPER FUNCTIONS ---
-    
-    // ฟังก์ชันแปลงไฟล์เป็น Base64
-    const getBase64 = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file); // แปลงไฟล์เป็น string ยาวๆ
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-    };
+    // --- UTILS ---
+    const getBase64 = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
 
-    // ฟังก์ชันเปิด/ปิด Loading
     const toggleLoading = (show, text = "กำลังประมวลผล...") => {
         const overlay = document.getElementById('loadingOverlay');
-        const txt = document.getElementById('loadingText');
-        if (show) {
-            overlay.style.display = 'flex';
-            txt.innerText = text;
-        } else {
-            overlay.style.display = 'none';
-        }
+        document.getElementById('loadingText').innerText = text;
+        overlay.style.display = show ? 'flex' : 'none';
     };
 
-    // --- 4. MAIN LOGIC ---
-
+    // --- MAIN ---
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
-            
-            if (!liff.isLoggedIn()) {
-                liff.login();
-                return;
-            }
-
+            if (!liff.isLoggedIn()) { liff.login(); return; }
             userProfile = await liff.getProfile();
-            // แสดงชื่อเพื่อความมั่นใจ (แต่ไม่ได้ส่งไปบันทึกตาม requirement)
             document.getElementById('welcomeMsg').innerText = `ผู้ทำรายการ: ${userProfile.displayName}`;
             
-            // ตั้งค่าวันที่ปัจจุบันเป็นค่าเริ่มต้น
+            // 1. Set Min Date (ป้องกันเลือกวันย้อนหลัง)
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('date').value = today;
+            const dateInput = document.getElementById('date');
+            dateInput.value = today; // Default วันนี้
+            dateInput.min = today;   // ห้ามเลือกก่อนวันนี้
 
         } catch (err) {
-            document.getElementById('status').innerText = "LIFF Error: " + err.message;
-            document.getElementById('status').className = "error";
+            alert("LIFF Error: " + err.message);
         }
     }
 
-    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
-        e.preventDefault(); // ห้าม Refresh หน้า
+    // --- SCHEDULE FUNCTION ---
+    async function viewSchedule(type) {
+        document.getElementById('scheduleModal').style.display = 'flex';
+        document.getElementById('scheduleList').innerHTML = '<p style="text-align:center;">⏳ กำลังโหลดข้อมูล...</p>';
+        
+        try {
+            const res = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'get_schedule', type: type })
+            });
+            const data = await res.json();
+            
+            const listDiv = document.getElementById('scheduleList');
+            listDiv.innerHTML = '';
+            
+            if (data.data && data.data.length > 0) {
+                data.data.forEach(item => {
+                    // สร้างการ์ดแสดงรายการ
+                    const div = document.createElement('div');
+                    div.className = 'schedule-item';
+                    div.innerHTML = `
+                        <strong>${item.date} (${item.start} - ${item.end})</strong><br>
+                        <small>${item.item}</small><br>
+                        <span style="color:#555;">${item.topic}</span>
+                        <div style="font-size:10px; text-align:right; color:${item.status=='APPROVED'?'green':'orange'}">${item.status}</div>
+                    `;
+                    listDiv.appendChild(div);
+                });
+            } else {
+                listDiv.innerHTML = '<p style="text-align:center; color:#999;">- ไม่มีรายการจองเร็วๆ นี้ -</p>';
+            }
+        } catch (e) {
+            document.getElementById('scheduleList').innerHTML = '<p style="color:red; text-align:center;">โหลดข้อมูลไม่สำเร็จ</p>';
+        }
+    }
 
-        if(!userProfile) {
-            alert("ไม่พบข้อมูลผู้ใช้ กรุณาลองใหม่");
+    function closeModal() {
+        document.getElementById('scheduleModal').style.display = 'none';
+    }
+
+    // --- SUBMIT ---
+    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // 2. Time Validation (เช็คเวลา)
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
+        const dateVal = document.getElementById('date').value;
+        
+        // แปลงเวลาเป็นนาทีเพื่อเปรียบเทียบ
+        const startMin = parseInt(startTime.split(':')[0])*60 + parseInt(startTime.split(':')[1]);
+        const endMin = parseInt(endTime.split(':')[0])*60 + parseInt(endTime.split(':')[1]);
+        
+        if (startMin >= endMin) {
+            alert("❌ เวลาเลิกประชุม ต้องอยู่หลังเวลาเริ่มประชุมเสมอครับ");
             return;
         }
 
-        // ตรวจสอบขนาดไฟล์
-        const fileInput = document.getElementById('fileInput');
-        if (fileInput.files.length > 0) {
-            const fileSize = fileInput.files[0].size / 1024 / 1024; // MB
-            if (fileSize > 5) {
-                alert("❌ ไฟล์มีขนาดใหญ่เกิน 5MB กรุณาลดขนาดไฟล์");
-                return;
-            }
+        // เช็ควันย้อนหลัง (เผื่อ user พิมพ์เอง)
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (dateVal < todayStr) {
+            alert("❌ ไม่สามารถจองวันย้อนหลังได้ครับ");
+            return;
         }
 
-        // เริ่มส่งข้อมูล
-        toggleLoading(true, "กำลังอัปโหลดเอกสารและบันทึกข้อมูล...");
-        const status = document.getElementById('status');
-        status.innerText = "";
+        if(!userProfile) return alert("User Profile not loaded");
 
+        // ... (Logic การ Upload เดิม) ...
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput.files.length > 0 && fileInput.files[0].size/1024/1024 > 3) {
+            alert("❌ ไฟล์ใหญ่เกิน 3MB"); return;
+        }
+
+        toggleLoading(true, "กำลังบันทึก...");
+        
         try {
-            // เตรียมไฟล์ (ถ้ามี)
-            let fileData = "";
-            let fileName = "";
-            let mimeType = "";
-
+            let fileData = "", fileName = "", mimeType = "";
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
                 fileData = await getBase64(file);
-                // ตั้งชื่อไฟล์: ID_Timestamp_OriginalName
                 fileName = `${userProfile.userId.substr(0,5)}_${new Date().getTime()}_${file.name}`;
                 mimeType = file.type;
             }
 
-            // แพ็คข้อมูลส่งหลังบ้าน (JSON Payload)
-            // *หมายเหตุ: ไม่ส่ง displayName แล้ว ระบบจะไปหาจาก Config_Role เอง
             const payload = {
                 action: 'submit_booking',
-                userId: userProfile.userId, 
+                userId: userProfile.userId,
                 room: document.getElementById('roomSelect').value,
                 topic: document.getElementById('topic').value,
-                date: document.getElementById('date').value,
-                start: document.getElementById('startTime').value,
-                end: document.getElementById('endTime').value,
-                fileData: fileData,
-                fileName: fileName,
-                mimeType: mimeType
+                date: dateVal,
+                start: startTime,
+                end: endTime,
+                fileData: fileData, fileName: fileName, mimeType: mimeType
             };
 
-            // ยิงไปหา Google Script
-            const res = await fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            });
+            const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
             const data = await res.json();
-
+            
             toggleLoading(false);
-
             if(data.status === 'success') {
-                alert("✅ บันทึกการจองสำเร็จ!\nรหัสรายการ: " + data.bookingId);
-                liff.closeWindow(); // ปิดหน้าต่าง LINE ทันที
+                alert("✅ จองสำเร็จ!");
+                liff.closeWindow();
             } else {
-                status.innerText = "เกิดข้อผิดพลาด: " + data.message;
-                status.className = "error";
+                alert("Error: " + data.message);
             }
-
         } catch (err) {
             toggleLoading(false);
-            status.innerText = "System Error: " + err.message;
-            status.className = "error";
+            alert("System Error: " + err.message);
         }
     });
 
-    // เริ่มทำงานเมื่อเปิดหน้าเว็บ
     init();
 </script>
 
