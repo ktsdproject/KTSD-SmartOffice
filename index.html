@@ -42,8 +42,9 @@
 
     <script>
         // --- CONFIGURATION ---
-const LIFF_ID = '2008629776-KXngaa2q';
+        const LIFF_ID = '2008629776-KXngaa2q';
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec';
+
         // --- MAIN LOGIC ---
         async function main() {
             try {
@@ -61,11 +62,15 @@ const LIFF_ID = '2008629776-KXngaa2q';
                 
                 // 3. Check Role with Backend (Google Script)
                 updateStatus('กำลังตรวจสอบสิทธิ์ในฐานข้อมูล...');
+                
+                // ส่งข้อมูลไปเช็ค (เพิ่ม displayName และ pictureUrl เพื่อ Auto-Register)
                 const response = await fetch(GAS_URL, {
                     method: 'POST',
                     body: JSON.stringify({
                         action: 'check_role',
-                        userId: profile.userId
+                        userId: profile.userId,
+                        displayName: profile.displayName, 
+                        pictureUrl: profile.pictureUrl
                     })
                 });
 
@@ -76,8 +81,7 @@ const LIFF_ID = '2008629776-KXngaa2q';
                     document.getElementById('userRole').innerHTML = `สถานะ: <strong>${data.role}</strong><br>ระดับ: ${data.level}`;
                     showContent();
                 } else if (data.status === 'create_new') {
-                     document.getElementById('userRole').innerText = 'คุณยังไม่มีสิทธิ์ในระบบ (Guest)';
-                     // ในอนาคตอาจเด้งไปหน้าลงทะเบียน
+                     document.getElementById('userRole').innerHTML = 'คุณยังไม่มีสิทธิ์ในระบบ (Guest)<br><small style="color:red">ระบบได้บันทึกข้อมูลของคุณแล้ว โปรดติดต่อ Admin</small>';
                      showContent();
                 } else {
                     updateStatus('Error: ' + data.message, true);
