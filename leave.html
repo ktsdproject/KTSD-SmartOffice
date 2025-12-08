@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบแจ้งวันลา-ฝ่ายปกครอง</title>
+    <title>ระบบแจ้งวันลา - K.T.S.D.</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -24,7 +24,7 @@
         
         .day-count { text-align: right; font-size: 14px; color: #0984e3; font-weight: bold; margin-bottom: 10px; }
 
-        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 999; justify-content: center; align-items: center; flex-direction: column; }
+        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 999; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; }
         .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #00b894; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -33,7 +33,7 @@
 
 <div id="loadingOverlay">
     <div class="spinner"></div>
-    <div id="loadingText">กำลังส่งใบลา...</div>
+    <div id="loadingText">กำลังตรวจสอบสิทธิ์...</div>
 </div>
 
 <div class="container">
@@ -83,8 +83,8 @@
 </div>
 
 <script>
-    const LIFF_ID = '2008629776-KXngaa2q'; // <-- ⚠️ ใส่ LIFF ID เดิม
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec'; // <-- ⚠️ ใส่ Web App URL
+    const LIFF_ID = '2008629776-KXngaa2q'; // <-- ⚠️ ตรวจสอบ LIFF ID
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec'; // <-- ⚠️ ตรวจสอบ Web App URL
 
     let userProfile = null;
 
@@ -97,8 +97,21 @@
     });
 
     const toggleLoading = (show, text = "กำลังประมวลผล...") => {
-        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
-        document.getElementById('loadingText').innerText = text;
+        const overlay = document.getElementById('loadingOverlay');
+        const txt = document.getElementById('loadingText');
+        const spinner = document.querySelector('.spinner');
+        
+        // Reset Style
+        txt.style.color = "#000";
+        txt.style.fontWeight = "normal";
+        spinner.style.display = "block";
+
+        if(show) {
+            overlay.style.display = 'flex';
+            txt.innerText = text;
+        } else {
+            overlay.style.display = 'none';
+        }
     };
 
     // --- Calc Days ---
@@ -128,6 +141,43 @@
             userProfile = await liff.getProfile();
             document.getElementById('welcomeMsg').innerText = `ผู้ลา: ${userProfile.displayName}`;
             
+            // --- 🛑 SANDBOX LOGIC (ตรวจสอบสิทธิ์) ---
+            toggleLoading(true, "กำลังตรวจสอบสิทธิ์...");
+            
+            const res = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'check_role',
+                    userId: userProfile.userId
+                })
+            });
+            const data = await res.json();
+
+            // ตรวจสอบเงื่อนไข
+            const ALLOWED_DEPT = 'ฝ่ายปกครอง'; 
+            const isAuthorized = (data.status === 'success') && 
+                                 ((data.department && data.department.includes(ALLOWED_DEPT)) || data.role === 'ADMIN');
+
+            if (!isAuthorized) {
+                // กรณีไม่ผ่าน: ปรับแต่งหน้าจอแจ้งเตือน (โดยไม่ใช้ alert)
+                const txt = document.getElementById('loadingText');
+                const spinner = document.querySelector('.spinner');
+                
+                spinner.style.display = 'none'; // ซ่อนตัวหมุน
+                txt.innerHTML = `⚠️ ขณะนี้เปิดให้ทดสอบระบบและใช้งานก่อน<br><span style="color:#d63031; font-weight:bold; font-size:18px;">เฉพาะ${ALLOWED_DEPT}เท่านั้น</span>`;
+                
+                // รอ 4 วินาที แล้วดีดกลับ
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 4000);
+                
+                return; // หยุดการทำงานของ init() ตรงนี้เลย
+            }
+
+            // ถ้าผ่าน -> ปิด Loading และทำงานต่อ
+            toggleLoading(false);
+            // ----------------------------------------
+
             // Set Default Date = Today
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('startDate').value = today;
