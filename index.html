@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Klongtoei Smart District Project</title>
+    <title>K.T.S.D. Smart Office</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -16,8 +16,10 @@
         /* ปุ่มเมนูหลัก */
         .btn { display: block; width: 100%; padding: 12px; border: none; border-radius: 6px; background-color: #00B900; color: white; font-size: 16px; cursor: pointer; transition: 0.3s; text-decoration: none; margin-top: 10px; font-weight: bold; }
         .btn:hover { opacity: 0.9; }
-        .btn.secondary { background-color: #636e72; }
-        .btn.primary { background-color: #0984e3; }
+        
+        .btn.secondary { background-color: #636e72; } /* สีเทา */
+        .btn.primary { background-color: #0984e3; }   /* สีฟ้า */
+        .btn.leave { background-color: #00b894; }     /* สีเขียวมิ้นต์ (สำหรับปุ่มลา) */
         
         .hidden { display: none; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
@@ -36,7 +38,7 @@
 <body>
 
     <div class="card">
-        <div class="logo">Klongtoei Smart District Project</div>
+        <div class="logo">K.T.S.D. Office</div>
         
         <div id="status" class="status-box">
             <div class="loader"></div>
@@ -51,13 +53,15 @@
             
             <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
 
-            <button onclick="window.location.href='booking.html'" class="btn">📅 จองห้องประชุม</button>
+            <button onclick="window.location.href='booking.html'" class="btn">📅 จองห้องประชุม/รถ</button>
             <button onclick="window.location.href='service.html'" class="btn secondary">🔧 แจ้งซ่อม/ปัญหา</button>
+            
+            <button id="btnLeave" onclick="window.location.href='leave.html'" class="btn leave hidden">🏖️ แจ้งวันลา</button>
         </div>
 
         <div id="registerBox" class="hidden">
             <img id="regProfileImg" src="https://via.placeholder.com/80" class="profile-img">
-            <h3 class="reg-title">📝 กรุณาลงทะเบียน</h3>
+            <h3 class="reg-title">📝 ลงทะเบียนสมาชิก</h3>
             <p style="font-size:13px; color:#666; margin-bottom:15px;">กรุณากรอกข้อมูลให้ครบถ้วนเพื่อยืนยันตัวตน</p>
             
             <form id="regForm">
@@ -68,12 +72,12 @@
                 
                 <div class="form-group">
                     <label>ตำแหน่ง *</label>
-                    <input type="text" id="regPosition" placeholder="เช่น เจ้าพนักงานปกครอง" required>
+                    <input type="text" id="regPosition" placeholder="เช่น นักวิชาการคอมพิวเตอร์" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>ฝ่าย *</label>
-                    <input type="text" id="regDept" placeholder="เช่น ฝ่ายปกครอง" required>
+                    <label>ฝ่าย/สำนัก *</label>
+                    <input type="text" id="regDept" placeholder="เช่น ฝ่ายเทคโนโลยีสารสนเทศ" required>
                 </div>
 
                 <div class="form-group">
@@ -96,15 +100,12 @@
         // --- MAIN LOGIC ---
         async function main() {
             try {
-                // 1. Init LIFF
                 await liff.init({ liffId: LIFF_ID });
                 if (!liff.isLoggedIn()) { liff.login(); return; }
 
-                // 2. Get Profile
                 const profile = await liff.getProfile();
                 currentUserProfile = profile;
                 
-                // 3. Check Role with Backend
                 updateStatus('กำลังตรวจสอบสิทธิ์...');
                 const response = await fetch(GAS_URL, {
                     method: 'POST',
@@ -116,23 +117,27 @@
 
                 const data = await response.json();
 
-                // 4. Handle Response
                 if (data.status === 'success') {
-                    // --- กรณี A: มีข้อมูลแล้ว (Login ผ่าน) ---
-                    document.getElementById('userName').innerText = data.name; // ชื่อจริงจาก DB
-                    document.getElementById('userDetails').innerText = data.email; // อีเมล
-                    
-                    // แสดง Position - Department
+                    // --- Login ผ่าน ---
+                    document.getElementById('userName').innerText = data.name;
+                    document.getElementById('userDetails').innerText = data.email;
                     document.getElementById('userRoleBadge').innerText = `${data.position} - ${data.department}`;
                     
                     if(profile.pictureUrl) document.getElementById('userImg').src = profile.pictureUrl;
                     
+                    // ✅ LOGIC แสดงปุ่มลา (เฉพาะฝ่ายปกครอง หรือ Admin)
+                    const allowedDept = 'ฝ่ายปกครอง';
+                    // เช็คว่ามีคำว่า "ฝ่ายปกครอง" ในชื่อฝ่ายหรือไม่ หรือเป็น ADMIN
+                    if ( (data.department && data.department.includes(allowedDept)) || data.role === 'ADMIN' ) {
+                        document.getElementById('btnLeave').classList.remove('hidden');
+                    }
+                    
                     showSection('content');
                     hideSection('status');
+
                 } else if (data.status === 'need_register') {
-                    // --- กรณี B: ต้องลงทะเบียนใหม่ ---
+                    // --- ต้องลงทะเบียน ---
                     if(profile.pictureUrl) document.getElementById('regProfileImg').src = profile.pictureUrl;
-                    
                     showSection('registerBox');
                     hideSection('status');
                 } else {
@@ -192,7 +197,7 @@
             }
         });
 
-        // --- HELPER FUNCTIONS ---
+        // --- HELPER ---
         function updateStatus(msg, isError = false) {
             const el = document.getElementById('status');
             el.innerHTML = `<div class="loader"></div><p>${msg}</p>`;
@@ -201,7 +206,6 @@
         function showSection(id) { document.getElementById(id).classList.remove('hidden'); }
         function hideSection(id) { document.getElementById(id).classList.add('hidden'); }
 
-        // Start App
         main();
     </script>
 </body>
