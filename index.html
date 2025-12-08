@@ -51,7 +51,7 @@
             
             <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
 
-            <button onclick="window.location.href='booking.html'" class="btn">📅 จองห้องประชุม</button>
+            <button onclick="window.location.href='booking.html'" class="btn">📅 จองห้องประชุม/รถ</button>
             <button onclick="window.location.href='service.html'" class="btn secondary">🔧 แจ้งซ่อม/ปัญหา</button>
         </div>
 
@@ -62,18 +62,18 @@
             
             <form id="regForm">
                 <div class="form-group">
-                    <label>ชื่อ-นามสกุลจริง (ใช้ประกอบการขออนุญาต)*</label>
+                    <label>ชื่อ-นามสกุลจริง *</label>
                     <input type="text" id="regRealName" placeholder="เช่น นายสมชาย ใจดี" required>
                 </div>
                 
                 <div class="form-group">
                     <label>ตำแหน่ง *</label>
-                    <input type="text" id="regPosition" placeholder="เช่น เจ้าพนักงานปกครอง" required>
+                    <input type="text" id="regPosition" placeholder="เช่น นักวิชาการคอมพิวเตอร์" required>
                 </div>
                 
                 <div class="form-group">
                     <label>ฝ่าย/สำนัก *</label>
-                    <input type="text" id="regDept" placeholder="เช่น ฝ่ายปกครอง" required>
+                    <input type="text" id="regDept" placeholder="เช่น ฝ่ายเทคโนโลยีสารสนเทศ" required>
                 </div>
 
                 <div class="form-group">
@@ -119,21 +119,19 @@
                 // 4. Handle Response
                 if (data.status === 'success') {
                     // --- กรณี A: มีข้อมูลแล้ว (Login ผ่าน) ---
-                    document.getElementById('userName').innerText = data.name; 
-                    document.getElementById('userDetails').innerText = data.email;
+                    document.getElementById('userName').innerText = data.name; // ชื่อจริงจาก DB
+                    document.getElementById('userDetails').innerText = data.email; // อีเมล
+                    
+                    // แสดง Position - Department
                     document.getElementById('userRoleBadge').innerText = `${data.position} - ${data.department}`;
-
+                    
                     if(profile.pictureUrl) document.getElementById('userImg').src = profile.pictureUrl;
                     
                     showSection('content');
                     hideSection('status');
-                }
                 } else if (data.status === 'need_register') {
                     // --- กรณี B: ต้องลงทะเบียนใหม่ ---
                     if(profile.pictureUrl) document.getElementById('regProfileImg').src = profile.pictureUrl;
-                    
-                    // Pre-fill ข้อมูลบางอย่างถ้าทำได้ (เช่น ชื่อ Display Name)
-                    // document.getElementById('regRealName').value = profile.displayName; 
                     
                     showSection('registerBox');
                     hideSection('status');
@@ -150,7 +148,6 @@
         document.getElementById('regForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // รับค่าจากฟอร์ม
             const realName = document.getElementById('regRealName').value.trim();
             const position = document.getElementById('regPosition').value.trim();
             const dept = document.getElementById('regDept').value.trim();
@@ -171,18 +168,18 @@
                     body: JSON.stringify({
                         action: 'register_user',
                         userId: currentUserProfile.userId,
-                        realName: realName, // ส่งชื่อจริง
-                        position: position, // ส่งตำแหน่ง
-                        department: dept,   // ส่งฝ่าย
-                        email: email,       // ส่งอีเมล
+                        realName: realName,
+                        position: position,
+                        department: dept,
+                        email: email,
                         pictureUrl: currentUserProfile.pictureUrl
                     })
                 });
                 const data = await res.json();
                 
                 if(data.status === 'success') {
-                    alert("✅ ลงทะเบียนสำเร็จ!\nสถานะของคุณคือ: GUEST\nกรุณารอ Admin กำหนดสิทธิ์การใช้งาน");
-                    location.reload(); // รีเฟรชหน้าเว็บเพื่อเข้าสู่หน้าหลัก
+                    alert("✅ ลงทะเบียนสำเร็จ!\nสถานะของคุณคือ: GUEST\nกรุณารอ Admin อนุมัติสิทธิ์การใช้งาน");
+                    location.reload(); 
                 } else {
                     alert("Error: " + data.message);
                     btn.disabled = false;
