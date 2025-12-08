@@ -180,7 +180,7 @@
                 const data = await res.json();
                 
                 if(data.status === 'success') {
-                    alert("✅ ลงทะเบียนสำเร็จ!\nสถานะของคุณคือ: GUEST\nกรุณารอ Admin อนุมัติสิทธิ์การใช้งาน");
+                    alert("✅ ลงทะเบียนสำเร็จ!\nสถานะของคุณคือ: GUEST\nกรุณารอ Admin กำหนดสิทธิ์การใช้งาน");
                     location.reload(); // รีเฟรชหน้าเว็บเพื่อเข้าสู่หน้าหลัก
                 } else {
                     alert("Error: " + data.message);
