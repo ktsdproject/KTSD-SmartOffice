@@ -28,23 +28,31 @@
         #status { text-align: center; margin-top: 15px; font-size: 14px; min-height: 20px; }
         .error { color: #d63031; }
         
-        /* Modal */
+        /* --- Modal Styles (ปรับปรุงใหม่ให้กว้างขึ้น) --- */
         #scheduleModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+        /* ขยายความกว้าง Modal เพื่อให้ใส่ 2 คอลัมน์ได้ไม่อึดอัด */
+        .modal-content { background: white; padding: 15px; border-radius: 10px; width: 95%; max-width: 700px; max-height: 85vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #aaa; }
-        .schedule-item { background: #f1f2f6; padding: 10px; border-radius: 5px; margin-bottom: 8px; border-left: 4px solid #0984e3; font-size: 14px; position: relative; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #aaa; }
+        
+        /* --- Grid Layout 2 คอลัมน์ --- */
+        .schedule-grid { display: flex; gap: 10px; }
+        .schedule-col { flex: 1; min-width: 0; } /* แบ่งครึ่งเท่ากัน */
+        .col-header { 
+            text-align: center; font-weight: bold; background: #dfe6e9; 
+            padding: 8px; border-radius: 5px; margin-bottom: 10px; color: #2d3436; font-size: 14px;
+        }
+
+        .schedule-item { background: #f1f2f6; padding: 8px; border-radius: 5px; margin-bottom: 8px; border-left: 4px solid #0984e3; font-size: 13px; position: relative; }
         
         /* ปุ่ม Action */
-        .action-container { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; }
-        .btn-action { border: none; border-radius: 50%; width: 26px; height: 26px; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center; color: white; text-decoration: none; }
+        .action-container { position: absolute; top: 5px; right: 5px; display: flex; gap: 3px; }
+        .btn-action { border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; cursor: pointer; display: flex; justify-content: center; align-items: center; color: white; text-decoration: none; }
         
         .btn-delete { background: #ff7675; }
         .btn-delete:hover { background: #d63031; }
-        
         .btn-approve { background: #00b894; }
         .btn-approve:hover { background: #00cec9; }
-
         .btn-file { background: #0984e3; }
         .btn-file:hover { background: #74b9ff; }
 
@@ -66,6 +74,7 @@
             <h3 style="margin:0;">📅 ตารางการจอง</h3>
             <button class="close-btn" onclick="closeModal()">&times;</button>
         </div>
+        
         <div id="scheduleList">
             <p style="text-align:center; color:#aaa;">กำลังโหลดข้อมูล...</p>
         </div>
@@ -78,7 +87,6 @@
     
     <div class="btn-group">
         <button type="button" class="btn-info" onclick="viewSchedule('room')">🔍 ตารางห้องประชุม</button>
-        
         </div>
 
     <form id="bookingForm">
@@ -87,8 +95,7 @@
             <select id="roomSelect" required>
                 <option value="" disabled selected>-- กรุณาเลือก --</option>
                 <option value="Room_A">🏢 ห้องประชุมใหญ่ (ชั้น 7)</option>
-                <option value="Room_B">🛑 ห้องประชุมเล็ก (Glass Room)</option>
-                
+                <option value="Room_B">🏛️ ห้องประชุมเล็ก (ชั้น 5)</option>
                 </select>
         </div>
 
@@ -128,8 +135,8 @@
 
 <script>
     // --- CONFIGURATION ---
-    const LIFF_ID = '2008629776-KXngaa2q'; // <-- ⚠️ ตรวจสอบ LIFF ID
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec'; // <-- ⚠️ ตรวจสอบ Web App URL
+    const LIFF_ID = '2008629776-KXngaa2q'; // <-- ⚠️ LIFF ID ของท่าน
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec'; // <-- ⚠️ URL Web App ของท่าน
 
     let userProfile = null;
 
@@ -164,7 +171,7 @@
         }
     }
 
-    // --- SCHEDULE FUNCTION ---
+    // --- SCHEDULE FUNCTION (ปรับปรุงเป็น 2 คอลัมน์) ---
     async function viewSchedule(type) {
         document.getElementById('scheduleModal').style.display = 'flex';
         document.getElementById('scheduleList').innerHTML = '<p style="text-align:center;">⏳ กำลังโหลดข้อมูล...</p>';
@@ -176,8 +183,21 @@
             });
             const data = await res.json();
             
+            // สร้างโครงสร้าง Grid 2 คอลัมน์
             const listDiv = document.getElementById('scheduleList');
-            listDiv.innerHTML = '';
+            listDiv.innerHTML = `
+                <div class="schedule-grid">
+                    <div class="schedule-col" id="colFloor5">
+                        <div class="col-header">🏛️ ชั้น 5</div>
+                    </div>
+                    <div class="schedule-col" id="colFloor7">
+                        <div class="col-header">🏢 ชั้น 7</div>
+                    </div>
+                </div>
+            `;
+            
+            const col5 = document.getElementById('colFloor5');
+            const col7 = document.getElementById('colFloor7');
             
             if (data.data && data.data.length > 0) {
                 data.data.forEach(item => {
@@ -185,35 +205,37 @@
                     div.className = 'schedule-item';
                     
                     let actions = '';
-                    
-                    // ปุ่มดูไฟล์ (📄)
                     if (item.fileUrl && item.fileUrl !== 'ไม่มีเอกสารแนบ' && !item.fileUrl.startsWith('Error')) {
                         actions += `<a href="${item.fileUrl}" target="_blank" class="btn-action btn-file" title="ดูเอกสารแนบ">📄</a>`;
                     }
-
-                    // ปุ่มอนุมัติ (✅)
                     if (item.canApprove) {
                         actions += `<button class="btn-action btn-approve" onclick="approveBooking('${item.bookingId}')" title="อนุมัติ">✓</button>`;
                     }
-                    
-                    // ปุ่มลบ (❌)
                     if (item.canCancel) {
                         actions += `<button class="btn-action btn-delete" onclick="cancelBooking('${item.bookingId}')" title="ยกเลิก">×</button>`;
                     }
 
                     div.innerHTML = `
                         <div class="action-container">${actions}</div>
-                        <strong>${item.date} (${item.start} - ${item.end})</strong><br>
+                        <strong>${item.date}</strong><br>
+                        <strong>${item.start} - ${item.end}</strong><br>
                         <small>${item.item}</small><br>
                         <span style="color:#555;">${item.topic}</span>
                         <div style="font-size:10px; text-align:right; margin-top:5px; font-weight:bold; color:${getStatusColor(item.status)}">
                             ${item.status}
                         </div>
                     `;
-                    listDiv.appendChild(div);
+                    
+                    // แยกฝั่งซ้ายขวาตามชื่อห้อง
+                    if (item.item.includes('ชั้น 7') || item.item.includes('Room_A')) {
+                        col7.appendChild(div);
+                    } else {
+                        // Room_B หรืออื่นๆ ให้ลงชั้น 5 (ฝั่งซ้าย)
+                        col5.appendChild(div);
+                    }
                 });
             } else {
-                listDiv.innerHTML = '<p style="text-align:center; color:#999;">- ไม่มีรายการจองเร็วๆ นี้ -</p>';
+                listDiv.innerHTML = '<p style="text-align:center; color:#999; margin-top:20px;">- ไม่มีรายการจองเร็วๆ นี้ -</p>';
             }
         } catch (e) {
             document.getElementById('scheduleList').innerHTML = '<p style="color:red; text-align:center;">โหลดข้อมูลไม่สำเร็จ</p>';
@@ -254,7 +276,8 @@
             
             if(data.status === 'success') {
                 alert("✅ " + successMsg);
-                closeModal(); 
+                closeModal(); // ปิดแล้วเปิดใหม่ถ้าต้องการ
+                viewSchedule('room'); // รีเฟรชตารางทันที
             } else {
                 alert("Error: " + data.message);
             }
