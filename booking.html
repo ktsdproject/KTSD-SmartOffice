@@ -28,24 +28,21 @@
         #status { text-align: center; margin-top: 15px; font-size: 14px; min-height: 20px; }
         .error { color: #d63031; }
         
-        /* Modal for Schedule */
+        /* Modal */
         #scheduleModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #aaa; }
-        .schedule-item { background: #f1f2f6; padding: 10px; border-radius: 5px; margin-bottom: 8px; border-left: 4px solid #0984e3; font-size: 14px; }
+        .schedule-item { background: #f1f2f6; padding: 10px; border-radius: 5px; margin-bottom: 8px; border-left: 4px solid #0984e3; font-size: 14px; position: relative; }
         
-        /* CSS ปุ่มลบ (เพิ่มใหม่) */
-        .btn-delete {
-            background: #ff7675; color: white; border: none; 
-            border-radius: 50%; width: 24px; height: 24px; 
-            font-size: 12px; cursor: pointer; float: right;
-            display: flex; justify-content: center; align-items: center;
-            margin-left: 10px;
-        }
+        /* ปุ่ม Action ใน Card */
+        .action-container { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; }
+        .btn-action { border: none; border-radius: 50%; width: 26px; height: 26px; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center; color: white; }
+        .btn-delete { background: #ff7675; }
         .btn-delete:hover { background: #d63031; }
+        .btn-approve { background: #00b894; }
+        .btn-approve:hover { background: #00cec9; }
 
-        /* Loading Overlay */
         #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 999; justify-content: center; align-items: center; flex-direction: column; }
         .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #0984e3; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -84,8 +81,8 @@
             <label>เลือกห้องประชุม / ยานพาหนะ</label>
             <select id="roomSelect" required>
                 <option value="" disabled selected>-- กรุณาเลือก --</option>
-                <option value="Room_A">🏢 ห้องประชุม (ชั้น 7)</option>
-                <option value="Room_B">🏛️ ห้องประชุม (ชั้น 5)</option>
+                <option value="Room_A">🏢 ห้องประชุมใหญ่ (ชั้น 7)</option>
+                <option value="Room_B">🛑 ห้องประชุมเล็ก (Glass Room)</option>
                 <option value="Car_01">🚐 รถตู้สำนักงาน (กท-1234)</option>
             </select>
         </div>
@@ -126,8 +123,8 @@
 
 <script>
     // --- CONFIGURATION ---
-    const LIFF_ID = '2008629776-KXngaa2q';
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec';
+    const LIFF_ID = '2008629776-KXngaa2q'; // <-- ⚠️ ใส่ LIFF ID เดิม
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec'; // <-- ⚠️ ใส่ Web App URL เดิม
 
     let userProfile = null;
 
@@ -140,9 +137,8 @@
     });
 
     const toggleLoading = (show, text = "กำลังประมวลผล...") => {
-        const overlay = document.getElementById('loadingOverlay');
+        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
         document.getElementById('loadingText').innerText = text;
-        overlay.style.display = show ? 'flex' : 'none';
     };
 
     // --- MAIN ---
@@ -153,18 +149,17 @@
             userProfile = await liff.getProfile();
             document.getElementById('welcomeMsg').innerText = `ผู้ทำรายการ: ${userProfile.displayName}`;
             
-            // 1. Set Min Date (ป้องกันเลือกวันย้อนหลัง)
             const today = new Date().toISOString().split('T')[0];
             const dateInput = document.getElementById('date');
-            dateInput.value = today; // Default วันนี้
-            dateInput.min = today;   // ห้ามเลือกก่อนวันนี้
+            dateInput.value = today; 
+            dateInput.min = today;   
 
         } catch (err) {
             alert("LIFF Error: " + err.message);
         }
     }
 
-    // --- SCHEDULE FUNCTION (แก้ไขใหม่ รองรับปุ่มลบ) ---
+    // --- SCHEDULE FUNCTION ---
     async function viewSchedule(type) {
         document.getElementById('scheduleModal').style.display = 'flex';
         document.getElementById('scheduleList').innerHTML = '<p style="text-align:center;">⏳ กำลังโหลดข้อมูล...</p>';
@@ -172,12 +167,7 @@
         try {
             const res = await fetch(GAS_URL, {
                 method: 'POST',
-                // ส่ง userId ไปด้วย เพื่อให้หลังบ้านเช็คสิทธิ์การลบ
-                body: JSON.stringify({ 
-                    action: 'get_schedule', 
-                    type: type,
-                    userId: userProfile.userId 
-                })
+                body: JSON.stringify({ action: 'get_schedule', type: type, userId: userProfile.userId })
             });
             const data = await res.json();
             
@@ -189,18 +179,27 @@
                     const div = document.createElement('div');
                     div.className = 'schedule-item';
                     
-                    // สร้างปุ่มลบ (แสดงเฉพาะถ้าหลังบ้านบอกว่า canCancel=true)
-                    let deleteBtn = '';
+                    // สร้างกลุ่มปุ่ม Action (แสดงเมื่อมีสิทธิ์)
+                    let actions = '';
+                    
+                    // ปุ่มอนุมัติ (สีเขียว)
+                    if (item.canApprove) {
+                        actions += `<button class="btn-action btn-approve" onclick="approveBooking('${item.bookingId}')">✓</button>`;
+                    }
+                    
+                    // ปุ่มลบ (สีแดง)
                     if (item.canCancel) {
-                        deleteBtn = `<button class="btn-delete" onclick="cancelBooking('${item.bookingId}')">&times;</button>`;
+                        actions += `<button class="btn-action btn-delete" onclick="cancelBooking('${item.bookingId}')">×</button>`;
                     }
 
                     div.innerHTML = `
-                        ${deleteBtn}
+                        <div class="action-container">${actions}</div>
                         <strong>${item.date} (${item.start} - ${item.end})</strong><br>
                         <small>${item.item}</small><br>
                         <span style="color:#555;">${item.topic}</span>
-                        <div style="font-size:10px; text-align:right; color:${item.status=='APPROVED'?'green':'orange'}">${item.status}</div>
+                        <div style="font-size:10px; text-align:right; margin-top:5px; font-weight:bold; color:${getStatusColor(item.status)}">
+                            ${item.status}
+                        </div>
                     `;
                     listDiv.appendChild(div);
                 });
@@ -212,31 +211,43 @@
         }
     }
 
-    // --- ฟังก์ชันยกเลิก (เพิ่มใหม่) ---
+    function getStatusColor(status) {
+        if(status === 'APPROVED') return '#00b894'; // เขียว
+        if(status === 'PENDING') return '#fdcb6e';  // เหลือง/ส้ม
+        if(status === 'CANCELLED') return '#d63031'; // แดง
+        return '#636e72';
+    }
+
+    // --- ACTIONS ---
     async function cancelBooking(bookingId) {
         if(!confirm("⚠️ ยืนยันการยกเลิกรายการจองนี้?")) return;
+        performAction('cancel_booking', bookingId, "ยกเลิกสำเร็จ");
+    }
 
-        toggleLoading(true, "กำลังยกเลิกรายการ...");
+    async function approveBooking(bookingId) {
+        if(!confirm("✅ ยืนยันการอนุมัติรายการนี้?")) return;
+        performAction('approve_booking', bookingId, "อนุมัติสำเร็จ");
+    }
 
+    async function performAction(actionName, bookingId, successMsg) {
+        toggleLoading(true, "กำลังดำเนินการ...");
         try {
             const res = await fetch(GAS_URL, {
                 method: 'POST',
                 body: JSON.stringify({
-                    action: 'cancel_booking',
+                    action: actionName,
                     bookingId: bookingId,
                     userId: userProfile.userId
                 })
             });
             const data = await res.json();
-            
             toggleLoading(false);
             
             if(data.status === 'success') {
-                alert("✅ ยกเลิกสำเร็จ");
-                closeModal(); // ปิดหน้าต่างแล้วเปิดใหม่เพื่อ Refresh
-                // หรือจะเรียก viewSchedule ใหม่ก็ได้
+                alert("✅ " + successMsg);
+                closeModal(); 
             } else {
-                alert("เกิดข้อผิดพลาด: " + data.message);
+                alert("Error: " + data.message);
             }
         } catch (e) {
             toggleLoading(false);
@@ -252,7 +263,6 @@
     document.getElementById('bookingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // 2. Time Validation (เช็คเวลา)
         const startTime = document.getElementById('startTime').value;
         const endTime = document.getElementById('endTime').value;
         const dateVal = document.getElementById('date').value;
@@ -305,7 +315,7 @@
             
             toggleLoading(false);
             if(data.status === 'success') {
-                alert("✅ จองสำเร็จ!");
+                alert("✅ จองสำเร็จ! (สถานะ: รออนุมัติ)");
                 liff.closeWindow();
             } else {
                 alert("Error: " + data.message);
