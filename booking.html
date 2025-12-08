@@ -28,16 +28,15 @@
         #status { text-align: center; margin-top: 15px; font-size: 14px; min-height: 20px; }
         .error { color: #d63031; }
         
-        /* --- Modal Styles (ปรับปรุงใหม่ให้กว้างขึ้น) --- */
+        /* Modal Styles */
         #scheduleModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        /* ขยายความกว้าง Modal เพื่อให้ใส่ 2 คอลัมน์ได้ไม่อึดอัด */
         .modal-content { background: white; padding: 15px; border-radius: 10px; width: 95%; max-width: 700px; max-height: 85vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #aaa; }
         
-        /* --- Grid Layout 2 คอลัมน์ --- */
+        /* Grid Layout 2 คอลัมน์ */
         .schedule-grid { display: flex; gap: 10px; }
-        .schedule-col { flex: 1; min-width: 0; } /* แบ่งครึ่งเท่ากัน */
+        .schedule-col { flex: 1; min-width: 0; }
         .col-header { 
             text-align: center; font-weight: bold; background: #dfe6e9; 
             padding: 8px; border-radius: 5px; margin-bottom: 10px; color: #2d3436; font-size: 14px;
@@ -95,7 +94,7 @@
             <select id="roomSelect" required>
                 <option value="" disabled selected>-- กรุณาเลือก --</option>
                 <option value="Room_A">🏢 ห้องประชุม (ชั้น 7)</option>
-                <option value="Room_B">🏛️ ห้องประชุม (ชั้น 5)</option>
+                <option value="Room_B">🏛️ ห้องประชุม (ชั้น5)</option>
                 </select>
         </div>
 
@@ -105,9 +104,9 @@
         </div>
 
         <div class="form-group">
-            <label>แนบหนังสือขอใช้ (PDF/รูปภาพ)</label>
-            <input type="file" id="fileInput" accept="application/pdf, image/jpeg, image/png">
-            <small style="color: #e17055; font-size: 12px;">* ขนาดไม่เกิน 3MB</small>
+            <label>แนบหนังสือขอใช้ (PDF/รูปภาพ) <span style="color:red">*</span></label>
+            <input type="file" id="fileInput" accept="application/pdf, image/jpeg, image/png" required>
+            <small style="color: #e17055; font-size: 12px;">* จำเป็นต้องแนบไฟล์ (ขนาดไม่เกิน 3MB)</small>
         </div>
 
         <div class="form-group">
@@ -135,8 +134,8 @@
 
 <script>
     // --- CONFIGURATION ---
-    const LIFF_ID = '2008629776-KXngaa2q'; // <-- ⚠️ LIFF ID ของท่าน
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec'; // <-- ⚠️ URL Web App ของท่าน
+    const LIFF_ID = '2008629776-KXngaa2q'; // <-- ⚠️ ตรวจสอบ LIFF ID
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec'; // <-- ⚠️ ตรวจสอบ Web App URL
 
     let userProfile = null;
 
@@ -171,7 +170,7 @@
         }
     }
 
-    // --- SCHEDULE FUNCTION (ปรับปรุงเป็น 2 คอลัมน์) ---
+    // --- SCHEDULE FUNCTION (2 Columns) ---
     async function viewSchedule(type) {
         document.getElementById('scheduleModal').style.display = 'flex';
         document.getElementById('scheduleList').innerHTML = '<p style="text-align:center;">⏳ กำลังโหลดข้อมูล...</p>';
@@ -183,15 +182,14 @@
             });
             const data = await res.json();
             
-            // สร้างโครงสร้าง Grid 2 คอลัมน์
             const listDiv = document.getElementById('scheduleList');
             listDiv.innerHTML = `
                 <div class="schedule-grid">
                     <div class="schedule-col" id="colFloor5">
-                        <div class="col-header">🏛️ ชั้น 5</div>
+                        <div class="col-header">🏛️ ชั้น 5 (ห้องเล็ก)</div>
                     </div>
                     <div class="schedule-col" id="colFloor7">
-                        <div class="col-header">🏢 ชั้น 7</div>
+                        <div class="col-header">🏢 ชั้น 7 (ห้องใหญ่)</div>
                     </div>
                 </div>
             `;
@@ -226,11 +224,9 @@
                         </div>
                     `;
                     
-                    // แยกฝั่งซ้ายขวาตามชื่อห้อง
                     if (item.item.includes('ชั้น 7') || item.item.includes('Room_A')) {
                         col7.appendChild(div);
                     } else {
-                        // Room_B หรืออื่นๆ ให้ลงชั้น 5 (ฝั่งซ้าย)
                         col5.appendChild(div);
                     }
                 });
@@ -276,8 +272,8 @@
             
             if(data.status === 'success') {
                 alert("✅ " + successMsg);
-                closeModal(); // ปิดแล้วเปิดใหม่ถ้าต้องการ
-                viewSchedule('room'); // รีเฟรชตารางทันที
+                closeModal();
+                viewSchedule('room');
             } else {
                 alert("Error: " + data.message);
             }
@@ -315,21 +311,29 @@
 
         if(!userProfile) return alert("User Profile not loaded");
 
+        // --- จุดตรวจสอบไฟล์ (Validation) ---
         const fileInput = document.getElementById('fileInput');
-        if (fileInput.files.length > 0 && fileInput.files[0].size/1024/1024 > 3) {
-            alert("❌ ไฟล์ใหญ่เกิน 3MB"); return;
+        
+        // 1. เช็คว่ามีไฟล์หรือไม่
+        if (fileInput.files.length === 0) {
+            alert("❌ กรุณาแนบไฟล์หนังสือขอใช้ก่อนกดจองครับ");
+            return; // หยุดการทำงานทันที
+        }
+
+        // 2. เช็คขนาดไฟล์
+        if (fileInput.files[0].size/1024/1024 > 3) {
+            alert("❌ ไฟล์มีขนาดใหญ่เกิน 3MB กรุณาลดขนาดไฟล์");
+            return;
         }
 
         toggleLoading(true, "กำลังบันทึก...");
         
         try {
             let fileData = "", fileName = "", mimeType = "";
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                fileData = await getBase64(file);
-                fileName = `${userProfile.userId.substr(0,5)}_${new Date().getTime()}_${file.name}`;
-                mimeType = file.type;
-            }
+            const file = fileInput.files[0];
+            fileData = await getBase64(file);
+            fileName = `${userProfile.userId.substr(0,5)}_${new Date().getTime()}_${file.name}`;
+            mimeType = file.type;
 
             const payload = {
                 action: 'submit_booking',
