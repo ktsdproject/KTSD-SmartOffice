@@ -1,70 +1,210 @@
-<div id="registerBox" class="hidden">
-            <img id="regProfileImg" src="" class="profile-img">
-            <h3 class="reg-title">📝 ลงทะเบียนผู้ใช้ใหม่</h3>
-            <p style="font-size:14px; color:#666; margin-bottom:15px;">กรุณากรอกข้อมูลให้ครบถ้วน</p>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K.T.S.D. Smart Office</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        .logo { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 20px; }
+        
+        .status-box { padding: 15px; background: #e8f4fd; border-radius: 8px; color: #0c5460; font-size: 14px; margin-bottom: 20px; }
+        
+        /* ปุ่มเมนูหลัก */
+        .btn { display: block; width: 100%; padding: 12px; border: none; border-radius: 6px; background-color: #00B900; color: white; font-size: 16px; cursor: pointer; transition: 0.3s; text-decoration: none; margin-top: 10px; font-weight: bold; }
+        .btn:hover { opacity: 0.9; }
+        .btn.secondary { background-color: #636e72; }
+        .btn.primary { background-color: #0984e3; }
+        
+        .hidden { display: none; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* สไตล์ฟอร์มลงทะเบียน */
+        .reg-title { color: #0984e3; font-weight: bold; margin-bottom: 5px; margin-top: 0; }
+        .profile-img { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px; border: 3px solid #eee; object-fit: cover; }
+        
+        .form-group { margin-bottom: 12px; text-align: left; }
+        .form-group label { display: block; font-size: 13px; font-weight: bold; color: #555; margin-bottom: 4px; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: 'Sarabun'; font-size: 14px; }
+        .form-group input:focus { border-color: #0984e3; outline: none; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="logo">K.T.S.D. Office</div>
+        
+        <div id="status" class="status-box">
+            <div class="loader"></div>
+            <p>กำลังเชื่อมต่อระบบ...</p>
+        </div>
+
+        <div id="content" class="hidden">
+            <img id="userImg" src="" class="profile-img" style="width:60px; height:60px;">
+            <h3 id="userName" style="margin: 5px 0;">สวัสดีครับ</h3>
+            <p id="userDetails" style="font-size: 13px; color: #666; margin-bottom: 5px;">...</p>
+            <p id="userRoleBadge" style="display:inline-block; background:#eee; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:bold; color:#555;">Checking...</p>
+            
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+            <button onclick="window.location.href='booking.html'" class="btn">📅 จองห้องประชุม/รถ</button>
+            <button onclick="window.location.href='service.html'" class="btn secondary">🔧 แจ้งซ่อม/ปัญหา</button>
+        </div>
+
+        <div id="registerBox" class="hidden">
+            <img id="regProfileImg" src="https://via.placeholder.com/80" class="profile-img">
+            <h3 class="reg-title">📝 ลงทะเบียนสมาชิก</h3>
+            <p style="font-size:13px; color:#666; margin-bottom:15px;">กรุณากรอกข้อมูลให้ครบถ้วนเพื่อยืนยันตัวตน</p>
             
             <form id="regForm">
-                <label>ชื่อ-นามสกุล *</label>
-                <input type="text" id="regRealName" placeholder="เช่น นายสมชาย ใจดี (ใช้ประกอบการขออนุญาตต่างๆ)" required>
+                <div class="form-group">
+                    <label>ชื่อ-นามสกุลจริง *</label>
+                    <input type="text" id="regRealName" placeholder="เช่น นายสมชาย ใจดี" required>
+                </div>
                 
-                <label>ตำแหน่ง *</label>
-                <input type="text" id="regPosition" placeholder="เช่น เจ้าพนักงานปกครอง" required>
+                <div class="form-group">
+                    <label>ตำแหน่ง *</label>
+                    <input type="text" id="regPosition" placeholder="เช่น นักวิชาการคอมพิวเตอร์" required>
+                </div>
                 
-                <label>ฝ่าย/กลุ่มงาน *</label>
-                <input type="text" id="regDept" placeholder="เช่น ฝ่ายปกครอง" required>
+                <div class="form-group">
+                    <label>ฝ่าย/สำนัก *</label>
+                    <input type="text" id="regDept" placeholder="เช่น ฝ่ายเทคโนโลยีสารสนเทศ" required>
+                </div>
 
-                <label>อีเมล (สำหรับ รับการแจ้งเตือน) *</label>
-                <input type="email" id="regEmail" placeholder="example@email.com" required>
+                <div class="form-group">
+                    <label>อีเมล (สำหรับรับแจ้งเตือน) *</label>
+                    <input type="email" id="regEmail" placeholder="example@email.com" required>
+                </div>
                 
                 <button type="submit" class="btn primary" id="regBtn">ยืนยันการลงทะเบียน</button>
             </form>
         </div>
+    </div>
 
-<script>
-    // ... (ส่วนต้นเหมือนเดิม) ...
+    <script>
+        // --- CONFIGURATION ---
+        const LIFF_ID = '2008629776-KXngaa2q'; // <-- ⚠️ ใส่ LIFF ID เดิมของท่าน
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec'; // <-- ⚠️ ใส่ Web App URL เดิมของท่าน
 
-    // แก้ไขส่วน Event Listener ของการกดปุ่มลงทะเบียน
-    document.getElementById('regForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const realName = document.getElementById('regRealName').value;
-        const position = document.getElementById('regPosition').value; // รับค่าตำแหน่ง
-        const dept = document.getElementById('regDept').value;         // รับค่าฝ่าย
-        const email = document.getElementById('regEmail').value;
-        const btn = document.getElementById('regBtn');
-        
-        if(!realName || !position || !dept || !email) return alert("กรุณากรอกข้อมูลให้ครบถ้วน");
-        
-        btn.disabled = true;
-        btn.innerText = "กำลังบันทึก...";
+        let currentUserProfile = null;
 
-        try {
-            const res = await fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'register_user',
-                    userId: currentUserProfile.userId,
-                    realName: realName,
-                    position: position, // ส่งตำแหน่ง
-                    department: dept,   // ส่งฝ่าย
-                    email: email,
-                    pictureUrl: currentUserProfile.pictureUrl
-                })
-            });
-            const data = await res.json();
-            
-            if(data.status === 'success') {
-                alert("✅ ลงทะเบียนสำเร็จ!\nสถานะของคุณคือ GUEST\nกรุณารอ Admin อนุมัติสิทธิ์การใช้งาน");
-                location.reload(); 
-            } else {
-                alert("Error: " + data.message);
-                btn.disabled = false;
-                btn.innerText = "ยืนยันการลงทะเบียน";
+        // --- MAIN LOGIC ---
+        async function main() {
+            try {
+                // 1. Init LIFF
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) { liff.login(); return; }
+
+                // 2. Get Profile
+                const profile = await liff.getProfile();
+                currentUserProfile = profile;
+                
+                // 3. Check Role with Backend
+                updateStatus('กำลังตรวจสอบสิทธิ์...');
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'check_role',
+                        userId: profile.userId
+                    })
+                });
+
+                const data = await response.json();
+
+                // 4. Handle Response
+                if (data.status === 'success') {
+                    // --- กรณี A: มีข้อมูลแล้ว (Login ผ่าน) ---
+                    document.getElementById('userName').innerText = data.name; // ชื่อจริงจาก DB
+                    document.getElementById('userDetails').innerText = data.email; // อีเมล
+                    document.getElementById('userRoleBadge').innerText = `สถานะ: ${data.role} (Level ${data.level})`;
+                    
+                    if(profile.pictureUrl) document.getElementById('userImg').src = profile.pictureUrl;
+                    
+                    showSection('content');
+                    hideSection('status');
+                } else if (data.status === 'need_register') {
+                    // --- กรณี B: ต้องลงทะเบียนใหม่ ---
+                    if(profile.pictureUrl) document.getElementById('regProfileImg').src = profile.pictureUrl;
+                    
+                    // Pre-fill ข้อมูลบางอย่างถ้าทำได้ (เช่น ชื่อ Display Name)
+                    // document.getElementById('regRealName').value = profile.displayName; 
+                    
+                    showSection('registerBox');
+                    hideSection('status');
+                } else {
+                    updateStatus('Error: ' + data.message, true);
+                }
+
+            } catch (err) {
+                updateStatus('เกิดข้อผิดพลาด: ' + err.message, true);
             }
-        } catch(err) {
-            alert("System Error: " + err.message);
-            btn.disabled = false;
         }
-    });
 
-    // ... (ส่วนอื่นๆ เหมือนเดิม) ...
-</script>
+        // --- REGISTRATION LOGIC ---
+        document.getElementById('regForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // รับค่าจากฟอร์ม
+            const realName = document.getElementById('regRealName').value.trim();
+            const position = document.getElementById('regPosition').value.trim();
+            const dept = document.getElementById('regDept').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const btn = document.getElementById('regBtn');
+            
+            if(!realName || !position || !dept || !email) {
+                alert("กรุณากรอกข้อมูลให้ครบทุกช่องครับ");
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerText = "กำลังบันทึก...";
+
+            try {
+                const res = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'register_user',
+                        userId: currentUserProfile.userId,
+                        realName: realName, // ส่งชื่อจริง
+                        position: position, // ส่งตำแหน่ง
+                        department: dept,   // ส่งฝ่าย
+                        email: email,       // ส่งอีเมล
+                        pictureUrl: currentUserProfile.pictureUrl
+                    })
+                });
+                const data = await res.json();
+                
+                if(data.status === 'success') {
+                    alert("✅ ลงทะเบียนสำเร็จ!\nสถานะของคุณคือ: GUEST\nกรุณารอ Admin อนุมัติสิทธิ์การใช้งาน");
+                    location.reload(); // รีเฟรชหน้าเว็บเพื่อเข้าสู่หน้าหลัก
+                } else {
+                    alert("Error: " + data.message);
+                    btn.disabled = false;
+                    btn.innerText = "ยืนยันการลงทะเบียน";
+                }
+            } catch(err) {
+                alert("System Error: " + err.message);
+                btn.disabled = false;
+                btn.innerText = "ลองใหม่อีกครั้ง";
+            }
+        });
+
+        // --- HELPER FUNCTIONS ---
+        function updateStatus(msg, isError = false) {
+            const el = document.getElementById('status');
+            el.innerHTML = `<div class="loader"></div><p>${msg}</p>`;
+            if(isError) el.innerHTML = `<p style="color:red">❌ ${msg}</p>`;
+        }
+        function showSection(id) { document.getElementById(id).classList.remove('hidden'); }
+        function hideSection(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // Start App
+        main();
+    </script>
+</body>
+</html>
