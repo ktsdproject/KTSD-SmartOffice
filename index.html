@@ -119,14 +119,17 @@
                 // 4. Handle Response
                 if (data.status === 'success') {
                     // --- กรณี A: มีข้อมูลแล้ว (Login ผ่าน) ---
-                    document.getElementById('userName').innerText = data.name; // ชื่อจริงจาก DB
-                    document.getElementById('userDetails').innerText = data.email; // อีเมล
-                    document.getElementById('userRoleBadge').innerText = `สถานะ: ${data.role} (Level ${data.level})`;
+                    document.getElementById('userName').innerText = data.name; 
+                    document.getElementById('userDetails').innerText = data.email;
+                    
+                    // ✅ แก้ไขตรงนี้ครับ (แสดง ตำแหน่ง - ฝ่าย)
+                    document.getElementById('userRoleBadge').innerText = `${data.position} - ${data.department}`;
                     
                     if(profile.pictureUrl) document.getElementById('userImg').src = profile.pictureUrl;
                     
                     showSection('content');
                     hideSection('status');
+                }
                 } else if (data.status === 'need_register') {
                     // --- กรณี B: ต้องลงทะเบียนใหม่ ---
                     if(profile.pictureUrl) document.getElementById('regProfileImg').src = profile.pictureUrl;
