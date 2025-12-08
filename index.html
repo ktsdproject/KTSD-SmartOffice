@@ -121,10 +121,8 @@
                     // --- กรณี A: มีข้อมูลแล้ว (Login ผ่าน) ---
                     document.getElementById('userName').innerText = data.name; 
                     document.getElementById('userDetails').innerText = data.email;
-                    
-                    // ✅ แก้ไขตรงนี้ครับ (แสดง ตำแหน่ง - ฝ่าย)
                     document.getElementById('userRoleBadge').innerText = `${data.position} - ${data.department}`;
-                    
+
                     if(profile.pictureUrl) document.getElementById('userImg').src = profile.pictureUrl;
                     
                     showSection('content');
