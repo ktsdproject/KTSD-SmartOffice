@@ -35,6 +35,16 @@
         .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #aaa; }
         .schedule-item { background: #f1f2f6; padding: 10px; border-radius: 5px; margin-bottom: 8px; border-left: 4px solid #0984e3; font-size: 14px; }
         
+        /* CSS ปุ่มลบ (เพิ่มใหม่) */
+        .btn-delete {
+            background: #ff7675; color: white; border: none; 
+            border-radius: 50%; width: 24px; height: 24px; 
+            font-size: 12px; cursor: pointer; float: right;
+            display: flex; justify-content: center; align-items: center;
+            margin-left: 10px;
+        }
+        .btn-delete:hover { background: #d63031; }
+
         /* Loading Overlay */
         #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 999; justify-content: center; align-items: center; flex-direction: column; }
         .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #0984e3; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
@@ -116,8 +126,8 @@
 
 <script>
     // --- CONFIGURATION ---
-    const LIFF_ID = '2008629776-KXngaa2q'; // <-- ใส่ LIFF ID เดิม
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec'; // <-- ใส่ Web App URL เดิม
+    const LIFF_ID = '2008629776-KXngaa2q';
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec';
 
     let userProfile = null;
 
@@ -154,7 +164,7 @@
         }
     }
 
-    // --- SCHEDULE FUNCTION ---
+    // --- SCHEDULE FUNCTION (แก้ไขใหม่ รองรับปุ่มลบ) ---
     async function viewSchedule(type) {
         document.getElementById('scheduleModal').style.display = 'flex';
         document.getElementById('scheduleList').innerHTML = '<p style="text-align:center;">⏳ กำลังโหลดข้อมูล...</p>';
@@ -162,7 +172,12 @@
         try {
             const res = await fetch(GAS_URL, {
                 method: 'POST',
-                body: JSON.stringify({ action: 'get_schedule', type: type })
+                // ส่ง userId ไปด้วย เพื่อให้หลังบ้านเช็คสิทธิ์การลบ
+                body: JSON.stringify({ 
+                    action: 'get_schedule', 
+                    type: type,
+                    userId: userProfile.userId 
+                })
             });
             const data = await res.json();
             
@@ -171,10 +186,17 @@
             
             if (data.data && data.data.length > 0) {
                 data.data.forEach(item => {
-                    // สร้างการ์ดแสดงรายการ
                     const div = document.createElement('div');
                     div.className = 'schedule-item';
+                    
+                    // สร้างปุ่มลบ (แสดงเฉพาะถ้าหลังบ้านบอกว่า canCancel=true)
+                    let deleteBtn = '';
+                    if (item.canCancel) {
+                        deleteBtn = `<button class="btn-delete" onclick="cancelBooking('${item.bookingId}')">&times;</button>`;
+                    }
+
                     div.innerHTML = `
+                        ${deleteBtn}
                         <strong>${item.date} (${item.start} - ${item.end})</strong><br>
                         <small>${item.item}</small><br>
                         <span style="color:#555;">${item.topic}</span>
@@ -187,6 +209,38 @@
             }
         } catch (e) {
             document.getElementById('scheduleList').innerHTML = '<p style="color:red; text-align:center;">โหลดข้อมูลไม่สำเร็จ</p>';
+        }
+    }
+
+    // --- ฟังก์ชันยกเลิก (เพิ่มใหม่) ---
+    async function cancelBooking(bookingId) {
+        if(!confirm("⚠️ ยืนยันการยกเลิกรายการจองนี้?")) return;
+
+        toggleLoading(true, "กำลังยกเลิกรายการ...");
+
+        try {
+            const res = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'cancel_booking',
+                    bookingId: bookingId,
+                    userId: userProfile.userId
+                })
+            });
+            const data = await res.json();
+            
+            toggleLoading(false);
+            
+            if(data.status === 'success') {
+                alert("✅ ยกเลิกสำเร็จ");
+                closeModal(); // ปิดหน้าต่างแล้วเปิดใหม่เพื่อ Refresh
+                // หรือจะเรียก viewSchedule ใหม่ก็ได้
+            } else {
+                alert("เกิดข้อผิดพลาด: " + data.message);
+            }
+        } catch (e) {
+            toggleLoading(false);
+            alert("System Error: " + e.message);
         }
     }
 
@@ -203,7 +257,6 @@
         const endTime = document.getElementById('endTime').value;
         const dateVal = document.getElementById('date').value;
         
-        // แปลงเวลาเป็นนาทีเพื่อเปรียบเทียบ
         const startMin = parseInt(startTime.split(':')[0])*60 + parseInt(startTime.split(':')[1]);
         const endMin = parseInt(endTime.split(':')[0])*60 + parseInt(endTime.split(':')[1]);
         
@@ -212,7 +265,6 @@
             return;
         }
 
-        // เช็ควันย้อนหลัง (เผื่อ user พิมพ์เอง)
         const todayStr = new Date().toISOString().split('T')[0];
         if (dateVal < todayStr) {
             alert("❌ ไม่สามารถจองวันย้อนหลังได้ครับ");
@@ -221,7 +273,6 @@
 
         if(!userProfile) return alert("User Profile not loaded");
 
-        // ... (Logic การ Upload เดิม) ...
         const fileInput = document.getElementById('fileInput');
         if (fileInput.files.length > 0 && fileInput.files[0].size/1024/1024 > 3) {
             alert("❌ ไฟล์ใหญ่เกิน 3MB"); return;
