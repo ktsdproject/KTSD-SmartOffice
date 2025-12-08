@@ -45,7 +45,6 @@
         .btn-approve { background: #00b894; }
         .btn-approve:hover { background: #00cec9; }
 
-        /* ปุ่มดูไฟล์ (สีฟ้า) */
         .btn-file { background: #0984e3; }
         .btn-file:hover { background: #74b9ff; }
 
@@ -79,18 +78,18 @@
     
     <div class="btn-group">
         <button type="button" class="btn-info" onclick="viewSchedule('room')">🔍 ตารางห้องประชุม</button>
-        <button type="button" class="btn-info" onclick="viewSchedule('car')">🚐 ตารางจองรถ</button>
-    </div>
+        
+        </div>
 
     <form id="bookingForm">
         <div class="form-group">
-            <label>เลือกห้องประชุม / ยานพาหนะ</label>
+            <label>เลือกห้องประชุม</label>
             <select id="roomSelect" required>
                 <option value="" disabled selected>-- กรุณาเลือก --</option>
-                <option value="Room_A">🏢 ห้องประชุม (ชั้น 7)</option>
-                <option value="Room_B">🏦 ห้องประชุม (ชั้น 5)</option>
-                <option value="Car_01">🚐 รถตู้สำนักงาน (กท-1234)</option>
-            </select>
+                <option value="Room_A">🏢 ห้องประชุมใหญ่ (ชั้น 7)</option>
+                <option value="Room_B">🛑 ห้องประชุมเล็ก (Glass Room)</option>
+                
+                </select>
         </div>
 
         <div class="form-group">
@@ -129,8 +128,8 @@
 
 <script>
     // --- CONFIGURATION ---
-    const LIFF_ID = '2008629776-KXngaa2q'; // <-- ⚠️ ใส่ LIFF ID เดิม
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec'; // <-- ⚠️ ใส่ Web App URL เดิม
+    const LIFF_ID = '2008629776-KXngaa2q'; // <-- ⚠️ ตรวจสอบ LIFF ID
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec'; // <-- ⚠️ ตรวจสอบ Web App URL
 
     let userProfile = null;
 
@@ -187,9 +186,8 @@
                     
                     let actions = '';
                     
-                    // ปุ่มดูไฟล์ (📄) - แสดงเฉพาะถ้ามี URL (ซึ่งหลังบ้านจะส่งมาให้เฉพาะ Admin)
+                    // ปุ่มดูไฟล์ (📄)
                     if (item.fileUrl && item.fileUrl !== 'ไม่มีเอกสารแนบ' && !item.fileUrl.startsWith('Error')) {
-                        // สร้างลิงก์เปิดแท็บใหม่
                         actions += `<a href="${item.fileUrl}" target="_blank" class="btn-action btn-file" title="ดูเอกสารแนบ">📄</a>`;
                     }
 
