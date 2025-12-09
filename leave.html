@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบแจ้งวันลา - K.T.S.D.</title>
+    <title>ระบบวันลาฝ่ายปกครอง</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -37,7 +37,8 @@
 </div>
 
 <div class="container">
-    <h2>🏖️ แบบฟอร์มขอลาหยุด</h2>
+    <h2>🏖️ ระบบแจ้งลา(ป่วย/ฉุกเฉิน)</h2>
+    <h2>ใช้สำหรับแจ้งลาป่วย/ฉุกเฉิน ให้หัวหน้าฝ่ายและคนในฝ่ายทราบ หากต้องการลากิจหรือลาประเภทอื่น ให้ทำตามระเบียบของหน่วยงาน</h2>
     <p id="welcomeMsg" style="text-align: center; font-size: 14px; color: #666; margin-bottom: 15px;">...</p>
     
     <form id="leaveForm">
@@ -46,9 +47,6 @@
             <select id="leaveType" required>
                 <option value="" disabled selected>-- กรุณาเลือก --</option>
                 <option value="ลาป่วย">🤒 ลาป่วย</option>
-                <option value="ลากิจ">📝 ลากิจส่วนตัว</option>
-                <option value="ลาพักผ่อน">🏖️ ลาพักผ่อน</option>
-                <option value="ลาคลอด">👶 ลาคลอด</option>
                 <option value="อื่นๆ">🏳️ อื่นๆ</option>
             </select>
         </div>
@@ -68,7 +66,7 @@
 
         <div class="form-group">
             <label>เหตุผลการลา</label>
-            <textarea id="reason" placeholder="เช่น ไม่สบาย เป็นไข้, ติดต่อราชการ..." required></textarea>
+            <textarea id="reason" placeholder="เช่น ไม่สบาย เป็นไข้, เกิดอุบัติเหตุ " required></textarea>
         </div>
 
         <div class="form-group">
