@@ -2,211 +2,847 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สำนักงานเขตคลองเตย</title>
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-W7Y2R6MGTQ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-W7Y2R6MGTQ'); 
+</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+
+    <script src="config.js"></script>
+    <script src="data.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+
+    <title>กรุงเทพมหานคร เขตคลองเตย</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#047857', 
+                        secondary: '#10b981', 
+                        accent: '#fbbf24', 
+                        surface: '#ffffff',
+                        background: '#f1f5f9',
+                    },
+                    fontFamily: {
+                        sans: ['Sarabun', 'sans-serif'],
+                        display: ['Prompt', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        .logo { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 20px; }
+        /* =========================================
+           CORE & RESET
+           ========================================= */
+        html { font-size: 62.5%; height: 100%; } 
+        body {
+            font-family: 'Sarabun', sans-serif; 
+            background-color: #f1f5f9;
+            color: #334155;
+            margin: 0; height: 100%; width: 100%;
+            overflow: hidden; overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1, h2, h3, .nav-tab, .badge, .filter-btn, .desktop-toggle-btn { font-family: 'Prompt', sans-serif; }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         
-        .status-box { padding: 15px; background: #e8f4fd; border-radius: 8px; color: #0c5460; font-size: 14px; margin-bottom: 20px; }
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+        }
+
+        /* =========================================
+           BUTTONS & UI ELEMENTS
+           ========================================= */
+        .close-btn-master {
+            width: 4.5rem; height: 4.5rem; background-color: #ef4444; color: white;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 2.4rem; font-weight: bold; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+            cursor: pointer; border: 2px solid white; transition: transform 0.2s, background-color 0.2s; z-index: 50;
+        }
+        .close-btn-master:active { transform: scale(0.9); background-color: #dc2626; }
+
+        .game-frame {
+            position: relative; background-color: #f1f5f9; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;
+        }
         
-        /* ปุ่มเมนูหลัก */
-        .btn { display: block; width: 100%; padding: 12px; border: none; border-radius: 6px; background-color: #00B900; color: white; font-size: 16px; cursor: pointer; transition: 0.3s; text-decoration: none; margin-top: 10px; font-weight: bold; }
-        .btn:hover { opacity: 0.9; }
+        .top-nav {
+            flex-shrink: 0; padding: 1rem 1.5rem; display: flex; gap: 1rem; z-index: 100; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        .nav-tab {
+            flex: 1; border: none; background: transparent; font-size: 1.6rem; font-weight: 600; color: #64748b;
+            cursor: pointer; padding: 1rem; border-radius: 1.2rem; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .nav-tab.active { background: #ecfdf5; color: #047857; box-shadow: inset 0 0 0 1px #a7f3d0; }
+
+        .content-area { flex: 1; position: relative; overflow: hidden; display: flex; width: 100%; }
+        .tab-view { width: 100%; height: 100%; display: none; flex-direction: column; }
+        .tab-view.active { display: flex; animation: fadeIn 0.3s ease-out; }
+        .desktop-switcher { display: none; }
+        .scroll-wrapper { flex: 1; overflow-y: auto; padding: 2.5rem; max-width: 800px; margin: 0 auto; width: 100%; padding-bottom: 8rem; }
+
+        /* Timeline */
+        .timeline-item { display: flex; gap: 2rem; position: relative; padding-bottom: 3.5rem; }
+        .timeline-item::before { content: ''; position: absolute; left: 1.9rem; top: 4rem; bottom: 0; width: 2px; background: #e2e8f0; border-radius: 2px; }
+        .timeline-item:last-child::before { display: none; }
+        .t-circle { width: 4rem; height: 4rem; border-radius: 50%; flex-shrink: 0; z-index: 1; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; color: white; border: 4px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); font-family: 'Prompt'; }
+        .t-status-done .t-circle { background: #10b981; } .t-status-active .t-circle { background: #f59e0b; } .t-status-future .t-circle { background: #cbd5e1; color: #94a3b8; }
+        .t-content { background: white; padding: 1.5rem; border-radius: 1.5rem; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .t-content h3 { font-size: 1.8rem; font-weight: 600; margin: 0; color: #1e293b; }
+        .t-content .t-date { display: inline-block; font-size: 1.3rem; font-weight: 600; color: #047857; background: #ecfdf5; padding: 0.2rem 0.8rem; border-radius: 0.6rem; margin-bottom: 0.5rem; }
+
+        /* FAQ */
+        .faq-container { display: flex; flex-direction: column; gap: 1.5rem; padding-bottom: 4rem; }
+        details { border: 1px solid #e2e8f0; border-radius: 1.2rem; overflow: hidden; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.3s ease; }
+        details[open] { border-color: #10b981; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1); }
+        summary { padding: 1.8rem; cursor: pointer; font-weight: 600; font-size: 1.6rem; color: #334155; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+        summary::-webkit-details-marker { display: none; }
+        summary::after { content: '+'; font-size: 2.4rem; color: #94a3b8; font-weight: 300; line-height: 1; margin-top: -4px; }
+        details[open] summary::after { transform: rotate(45deg); color: #10b981; }
+        .faq-answer { padding: 0 1.8rem 1.8rem 1.8rem; font-size: 1.5rem; color: #475569; line-height: 1.7; }
+
+        /* Map UI */
+        #map { width: 100%; height: 100%; z-index: 1; }
+        .filter-container { position: absolute; top: 1.5rem; left: 1rem; right: 1rem; z-index: 500; pointer-events: none; display: flex; flex-direction: column; gap: 1rem; }
+        .search-box { pointer-events: auto; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); padding: 0.6rem; border-radius: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); display: flex; gap: 0.5rem; width: 100%; max-width: 420px; margin: 0 auto; align-items: center; border: 1px solid rgba(255,255,255,0.5); }
+        .search-dropdown { border: none; outline: none; background: transparent; font-size: 1.5rem; color: #334155; padding: 0.8rem; flex-grow: 1; }
+        .search-btn { background: linear-gradient(135deg, #10b981, #047857); color: white; border: none; width: 4rem; height: 4rem; border-radius: 1.2rem; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; box-shadow: 0 4px 6px rgba(4, 120, 87, 0.2); }
+        .scroll-btn-container { pointer-events: auto; display: flex; gap: 0.8rem; overflow-x: auto; width: 100%; max-width: 100%; padding: 5px 20px 15px 20px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .scroll-btn-container::-webkit-scrollbar { display: none; }
+        .filter-btn { flex: 0 0 auto; white-space: nowrap; background: white; border: 1px solid #e2e8f0; padding: 0.8rem 1.6rem; border-radius: 2rem; font-size: 1.4rem; font-weight: 600; color: #64748b; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .filter-btn.active { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); border-color: transparent; }
+
+        /* =========================================
+           INFO POPUP / CARD
+           ========================================= */
+        .info-popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; display: flex; justify-content: center; align-items: flex-end; background-color: rgba(15, 23, 42, 0.3); backdrop-filter: blur(4px); opacity: 0; visibility: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .info-popup-overlay.visible { opacity: 1; visibility: visible; }
+        .neon-border-box { position: relative; width: 100%; max-height: 85vh; border-radius: 2.5rem 2.5rem 0 0; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); background: white; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); }
+        .info-popup-overlay.visible .neon-border-box { transform: translateY(0); }
+        .info-card { position: relative; z-index: 2; padding: 0 2.5rem 3rem 2.5rem; display: flex; flex-direction: column; overflow-y: auto; max-height: 85vh; }
+        .drag-handle { width: 4rem; height: 0.5rem; background: #e2e8f0; border-radius: 1rem; margin: 1.5rem auto 2rem auto; flex-shrink: 0; }
+        .info-close-pos { position: absolute; top: 2rem; right: 2rem; }
+
+        .gallery-scroll { display: flex; overflow-x: auto; gap: 1.2rem; padding: 1.5rem 0; flex-shrink: 0; }
+        .gallery-scroll img { height: 12rem; width: auto; border-radius: 1.2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); cursor: pointer; }
+
+        .modern-link-card { display: flex; align-items: center; justify-content: space-between; padding: 1.5rem; background: white; border: 1px solid #e2e8f0; border-radius: 1.5rem; text-decoration: none; position: relative; overflow: hidden; transition: all 0.2s; }
+        .modern-link-card:active { transform: scale(0.98); background: #f8fafc; }
+
+        /* =========================================
+           PDF VIEWER OVERLAY
+           ========================================= */
+        .pdf-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; background-color: rgba(15, 23, 42, 0.95); display: flex; flex-direction: column; opacity: 0; visibility: hidden; transition: all 0.3s ease; backdrop-filter: blur(5px); }
+        .pdf-overlay.active { opacity: 1; visibility: visible; }
+        .pdf-header { height: 7rem; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .pdf-title { color: white; font-size: 2rem; font-weight: bold; font-family: 'Prompt'; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 1rem;}
+        .pdf-container { flex: 1; width: 100%; height: 100%; padding: 1rem; box-sizing: border-box; background: #cbd5e1; }
+        .pdf-frame { width: 100%; height: 100%; border: none; border-radius: 0.8rem; background: white; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
+        /* =========================================
+           LIGHTBOX FOR IMAGES
+           ========================================= */
+        .lightbox-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 5000; background-color: rgba(15, 23, 42, 0.98); display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.3s; }
+        .lightbox-overlay.active { opacity: 1; visibility: visible; }
+        .lightbox-img { max-width: 95vw; max-height: 80vh; object-fit: contain; border-radius: 8px; transform: scale(0.95); transition: transform 0.3s ease; }
+        .lightbox-overlay.active .lightbox-img { transform: scale(1); }
+        .lightbox-close-pos { position: absolute; top: 2rem; right: 2rem; }
+
+        /* Desktop Adjustments */
+        @media (min-width: 1024px) {
+            .game-frame { flex-direction: row; } .top-nav { display: none; }
+            .left-panel-content { width: 400px; height: 100%; border-right: 1px solid #e2e8f0; display: none !important; flex-direction: column; background: white; z-index: 10; box-shadow: 4px 0 24px rgba(0,0,0,0.05); }
+            .left-panel-content.desktop-active { display: flex !important; animation: slideRight 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+            .desktop-switcher { flex-shrink: 0; display: flex; justify-content: center; gap: 1rem; padding: 2.5rem 0; background: white; position: sticky; top: 0; z-index: 20; border-bottom: 1px solid #f1f5f9; }
+            .desktop-toggle-btn { padding: 0.8rem 2.5rem; border-radius: 3rem; background: #f1f5f9; cursor: pointer; font-size: 1.5rem; font-weight: 600; color: #64748b; }
+            .desktop-toggle-btn.active { background: #047857; color: white; }
+            #view-map { display: block !important; flex: 1; position: relative; }
+            .info-popup-overlay { align-items: center; background-color: rgba(15, 23, 42, 0.5); }
+            .neon-border-box { width: 480px; max-height: 85vh; border-radius: 2rem; transform: scale(0.95); opacity: 0; }
+            .info-popup-overlay.visible .neon-border-box { transform: scale(1); opacity: 1; }
+            .drag-handle { display: none; } .info-card { padding: 3rem; }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideRight { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .custom-pin div { font-family: 'Prompt', sans-serif; transition: transform 0.2s; }
+        .custom-pin:hover div { transform: scale(1.15) translateY(-2px); z-index: 999; }
+
+
+        /* =========================================
+           CANDIDATE 3D CARDS (Responsive & Non-blocking Text)
+           ========================================= */
+        #candidate-viewer {
+            --box-bg: #232323; --card-bg-text: rgba(255, 255, 255, 0.05);
+        }
+        .candidate-scroll-area {
+            flex: 1; display: flex; justify-content: center; align-items: center; padding: 1rem; width: 100%;
+        }
+        .candidate-container {
+            position: relative; display: flex; justify-content: space-between; align-items: center;
+            width: 100%; max-width: 600px; padding: 0; gap: 1vw; transform-style: preserve-3d;
+        }
+
+        .box {
+            position: relative; 
+            width: 30em; height: 40em; /* 1em = Responsive Scale */
+            border-radius: 2em; transform-style: preserve-3d; flex-shrink: 0;
+            background-color: var(--box-bg); cursor: pointer;
+            font-size: min(1.05vw, 4.5px); 
+        }
+
+        /* BANNER OVERLAY - แก้ไขให้เป็นชิ้นเล็กและคงสัดส่วนเดิม 1/5 ของความสูงการ์ด */
+        .box .card-banner {
+            display: none;
+        }
+        .box-maxi .card-banner {
+            display: block;
+            position: absolute;
+            bottom: 0; /* ให้อยู่ล่างสุด */
+            left: 0;
+            width: 100%;
+            height: 20%; /* สูงประมาณ 1/5 ของการ์ด */
+            object-fit: contain; /* คงอัตราส่วนรูปภาพเดิม ไม่ให้เพี้ยน */
+            object-position: bottom center; /* จัดให้รูปชิดขอบล่างตรงกลาง */
+            border-bottom-left-radius: 2em; /* โค้งตามมุมการ์ดล่างซ้าย */
+            border-bottom-right-radius: 2em; /* โค้งตามมุมการ์ดล่างขวา */
+            z-index: 50; /* อยู่หน้าสุด */
+            opacity: 1; /* ไม่จาง */
+            pointer-events: none;
+        }
         
-        .btn.secondary { background-color: #636e72; } /* สีเทา */
-        .btn.primary { background-color: #0984e3; }   /* สีฟ้า */
-        .btn.leave { background-color: #00b894; }     /* สีเขียวมิ้นต์ (สำหรับปุ่มลา) */
+        /* 1. จัดการ "เบอร์" ให้อยู่ด้านบน ไม่เลื่อนขึ้นลง */
+        .box .number {
+            position: absolute; top: 1.5em; left: 0; width: 100%; 
+            text-align: center; color: #ffffff; /* สีขาว */
+            font-family: 'Prompt', sans-serif; font-weight: 700; font-size: 3em; margin: 0;
+            transform-style: preserve-3d; transform: translate3d(0, 0, 7.5em);
+            transition: 0.5s; z-index: 12; text-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
         
-        .hidden { display: none; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* 2. จัดการ "ชื่อ" ให้อยู่ด้านล่าง ไม่เลื่อนขึ้นลง */
+        .box .name {
+            position: absolute; bottom: 1.5em; left: 0; width: 100%; 
+            text-align: center; color: #ffffff; /* สีขาว */
+            font-family: 'Prompt', sans-serif; font-weight: 500; font-size: 1.8em; margin: 0;
+            padding: 0 1em; box-sizing: border-box; /* ป้องกันการล้นขอบ */
+            transform-style: preserve-3d; transform: translate3d(0, 0, 7.5em);
+            transition: 0.5s; z-index: 12; text-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
         
-        /* สไตล์ฟอร์มลงทะเบียน */
-        .reg-title { color: #0984e3; font-weight: bold; margin-bottom: 5px; margin-top: 0; }
-        .profile-img { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px; border: 3px solid #eee; object-fit: cover; }
+        /* วงกลม Effect พื้นหลังรูป */
+        .box .circle { position: absolute; top: 50%; left: 50%; width: 20em; height: 20em; border-radius: 50%; transition: 0.5s; background: #ffffff; transform-style: preserve-3d; z-index: 10; opacity: 1; transform: translate3d(-50%, -50%, 0px); }
+        .box:hover .circle { transform: translate3d(-50%, -50%, 3.5em); }
         
-        .form-group { margin-bottom: 12px; text-align: left; }
-        .form-group label { display: block; font-size: 13px; font-weight: bold; color: #555; margin-bottom: 4px; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: 'Sarabun'; font-size: 14px; }
-        .form-group input:focus { border-color: #0984e3; outline: none; }
+        /* รูปผู้สมัคร */
+        .box .product { 
+            position: absolute; top: 50%; left: 50%; 
+            max-width: 26em; max-height: 24em; /* บีบขนาดความสูงลงนิดหน่อยเพื่อไม่ให้บังหนังสือ */
+            object-fit: contain; transition: 0.5s; z-index: 11; transform-style: preserve-3d; 
+            transform: translate3d(-50%, -50%, 0px); border-radius: 1em; 
+        }
+
+        /* Hover Effect - เด้งออกมาด้านหน้า (Z-axis) อย่างเดียว */
+        .box:hover .product { transform: translate3d(-50%, -50%, 10em); }
+        .box:hover .number { transform: translate3d(0, 0, 12em); }
+        .box:hover .name { transform: translate3d(0, 0, 12em); }
+
+        /* ซ่อนปุ่ม แตะเพื่อขยาย (ทำให้คลิกได้ทั้งการ์ดเลยสะอาดกว่า) */
+        .box .buy { display: none; }
+
+        /* 3D Borders */
+        .box.card-fx::before { position: absolute; content: ""; top: 0; left:0; width: 100%; height: 100%; border-radius: 2.25em; z-index: -1; border: 0.155em solid transparent; -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0); -webkit-mask-composite: destination-out; mask-composite: exclude; font-size: unset; font-weight: unset; color: unset; font-style: unset; }
+        
+        /* สีประจำเบอร์ */
+        .box.blue { background: radial-gradient(ellipse at right top, #1da3c3ed 0%, var(--box-bg) 47%, var(--box-bg) 100%); }
+        .box.blue.card-fx:before { background: linear-gradient(45deg, var(--box-bg), var(--box-bg), var(--box-bg), var(--box-bg), #1da3c3) border-box; }
+        .box.blue .circle { background: #1da3c3; }
+
+        .box.orange { background: radial-gradient(ellipse at right top, #f97316ed 0%, var(--box-bg) 47%, var(--box-bg) 100%); }
+        .box.orange.card-fx:before { background: linear-gradient(45deg, var(--box-bg), var(--box-bg), var(--box-bg), var(--box-bg), #f97316) border-box; }
+        .box.orange .circle { background: #f97316; }
+
+        .box.yellow { background: radial-gradient(ellipse at right top, #eab308ed 0%, var(--box-bg) 47%, var(--box-bg) 100%); }
+        .box.yellow.card-fx:before { background: linear-gradient(45deg, var(--box-bg), var(--box-bg), var(--box-bg), var(--box-bg), #eab308) border-box; }
+        .box.yellow .circle { background: #eab308; }
+
+
+        /* =========================================
+           CARD EXPAND LIGHTBOX (เฉพาะตอนขยายการ์ดหน้าเดี่ยว)
+           ========================================= */
+        #card-expanded-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 4000;
+            background-color: rgba(15, 23, 42, 0.95); display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: all 0.3s ease; backdrop-filter: blur(8px);
+        }
+        #card-expanded-overlay.active { opacity: 1; visibility: visible; }
+        
+        /* สั่งให้การ์ดในสถานะขยาย มีขนาดใหญ่ขึ้น */
+        .box-maxi {
+            font-size: min(2.5vw, 9px) !important; /* ขยายการ์ดให้ใหญ่ขึ้น 2-3 เท่า */
+            margin: auto; cursor: default;
+        }
+
+        /* =========================================
+           CANDIDATE 2 (ผู้ว่าฯ) - 6 แถว 3 คอลัมน์ (ใช้ rem)
+           ========================================= */
+        #candidate2-viewer {
+            --box-bg: #232323; --card-bg-text: rgba(255, 255, 255, 0.05);
+        }
+        .candidate2-scroll-area {
+            flex: 1; overflow-y: auto; overflow-x: hidden; padding: 2rem 1rem; width: 100%;
+        }
+        .candidate2-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem; /* ใช้ rem กำหนดระยะห่างตามสั่ง */
+            width: 100%; max-width: 60rem; margin: auto;
+            justify-items: center;
+        }
+        .candidate2-container .box {
+            font-size: 0.5rem; /* ใช้ rem กำหนดขนาด box พื้นฐานให้อยู่ใน 3 คอลัมน์ได้ */
+            margin: 0; /* ล้าง margin ของเดิม */
+        }
+        /* สีเขียวสำหรับผู้ว่าฯ โดยเฉพาะ */
+        .box.green { background: radial-gradient(ellipse at right top, #10b981ed 0%, var(--box-bg) 47%, var(--box-bg) 100%); }
+        .box.green.card-fx:before { background: linear-gradient(45deg, var(--box-bg), var(--box-bg), var(--box-bg), var(--box-bg), #10b981) border-box; }
+        .box.green .circle { background: #10b981; }
+
+        /* ย่อขนาดในมือถือให้ยังคง 3 คอลัมน์โดยไม่ล้นจอ */
+        @media (max-width: 768px) {
+            .candidate2-container { gap: 0.5rem; }
+            .candidate2-container .box { font-size: 0.35rem; }
+        }
+
     </style>
 </head>
-<body>
+<body class="mobile-mode"> 
 
-    <div class="card">
-        <div class="logo">Klongtoei Smart District Project</div>
-        
-        <div id="status" class="status-box">
-            <div class="loader"></div>
-            <p>กำลังเชื่อมต่อระบบ...</p>
+    <div class="game-frame">
+        <nav class="top-nav glass">
+            <button class="nav-tab" onclick="switchTab('timeline', this)"><span>📅</span> ไทม์ไลน์</button>
+            <button class="nav-tab active" onclick="switchTab('map', this)"><span>🗺️</span> แผนที่</button>
+            <button class="nav-tab" onclick="switchTab('guide', this)"><span>📖</span> คู่มือ</button>
+        </nav>
+
+        <div class="content-area">
+            <div id="view-timeline" class="tab-view left-panel-content">
+                <div class="desktop-switcher">
+                    <button class="desktop-toggle-btn active" onclick="switchDesktopPanel('timeline')">ปฏิทิน</button>
+                    <button class="desktop-toggle-btn" onclick="switchDesktopPanel('guide')">คู่มือ</button>
+                </div>
+                <div class="scroll-wrapper">
+                    <div class="mb-10 text-center">
+                        <div class="inline-block px-4 py-1 mb-4 text-xl font-medium text-emerald-700 bg-emerald-100 rounded-full">การเลือกตั้งสมาชิกสภากรุงเทพมหานคร<br>และผู้ว่าราชการกรุงเทพมหานคร</div>
+                        <h1 class="text-4xl font-bold text-slate-800 mb-2">เขตคลองเตย</h1>
+                    </div>
+                    <div id="timeline-container"></div>
+                    <button class="w-full py-4 mt-8 bg-slate-200 text-slate-600 rounded-2xl font-bold text-xl hover:bg-slate-300 lg:hidden" 
+                        onclick="switchTab('map', document.querySelectorAll('.nav-tab')[1])">
+                        ไปที่แผนที่เลือกตั้ง 👉
+                    </button>
+                </div>
+            </div>
+
+            <div id="view-guide" class="tab-view left-panel-content">
+                <div class="desktop-switcher">
+                    <button class="desktop-toggle-btn" onclick="switchDesktopPanel('timeline')">ปฏิทิน</button>
+                    <button class="desktop-toggle-btn active" onclick="switchDesktopPanel('guide')">คู่มือ</button>
+                </div>
+                <div class="scroll-wrapper">
+                    <div class="text-center mb-10">
+                         <div class="inline-block p-4 bg-amber-100 rounded-full mb-4 text-4xl">🗳️</div>
+                         <h1 class="text-3xl font-bold text-slate-800">คู่มือเลือกตั้ง ฉบับย่อ</h1>
+                    </div>
+                    <div class="faq-container">
+                        <details open><summary>1. ต้องเตรียมเอกสารอะไรบ้าง?</summary><div class="faq-answer">หลักฐานสำคัญที่สุดคือ <b>"บัตรประชาชน"</b> (หมดอายุก็ใช้ได้) หรือหลักฐานอื่นของทางราชการที่มีรูปถ่ายและเลขประจำตัวประชาชน เช่น ใบขับขี่, พาสปอร์ต, หรือแอปพลิเคชัน ThaID</div></details>
+                    <details><summary>2. ตรวจสอบสิทธิเลือกตั้งที่ไหน?</summary><div class="faq-answer">สามารถตรวจสอบรายชื่อผู้มีสิทธิเลือกตั้งได้จากหนังสือแจ้งเจ้าบ้าน หรือผ่านเว็บไซต์ของกรมการปกครอง (Bora Portal) และแอปพลิเคชัน Smart Vote</div></details>
+                    <details><summary>3. ถ้าไม่ว่างวันจริงทำอย่างไร?</summary><div class="faq-answer">ท่านสามารถลงทะเบียน <b>"เลือกตั้งล่วงหน้า"</b> ได้ในช่วงวันที่ 20 ธ.ค. 68 - 5 ม.ค. 69 โดยสามารถยื่นคำขอต่อนายทะเบียนสำนักงานเขต หรือผ่านทางออนไลน์</div></details>
+                    <details><summary>4. คูหาเปิดกี่โมง?</summary><div class="faq-answer">คูหาเลือกตั้งเปิดให้ลงคะแนนตั้งแต่เวลา <b>08.00 น. ถึง 17.00 น.</b> โปรดวางแผนการเดินทางเพื่อไปใช้สิทธิได้ทันเวลา</div></details>
+                    <details><summary>5. กากบาทอย่างไรไม่ให้เป็นบัตรเสีย?</summary><div class="faq-answer">ทำเครื่องหมาย <b>"กากบาท (X)"</b> ลงในช่องทำเครื่องหมายเพียงเครื่องหมายเดียว ห้ามขีดเขียนข้อความอื่นหรือทำเครื่องหมายสัญลักษณ์อื่นใด</div></details>
+                    <details><summary>6. ข้อห้ามที่สำคัญในวันเลือกตั้ง</summary><div class="faq-answer">❌ ห้ามถ่ายรูปภายในคูหา หรือบัตรเลือกตั้ง<br>❌ ห้ามใส่เครื่องแต่งกายที่มีโลโก้พรรค หรือผู้สมัคร<br>❌ ห้ามแสดงบัตรเลือกตั้งให้ผู้อื่นเห็น<br>❌ ห้ามโฆษณา หาเสียง ให้ผู้สมัคร หรือพรรคการเมือง<br>❌ ห้ามกระทำการใด อันเป็นเหตุในการขัดขวางการปฏิบัติหน้าที่ของเจ้าพนักงาน หรือกระทบต่อการใช้สิทธิของผู้อื่น</div></details>
+                </div>
+                    <button class="w-full py-4 mt-8 bg-slate-200 text-slate-600 rounded-2xl font-bold text-xl hover:bg-slate-300 lg:hidden" 
+                        onclick="switchTab('map', document.querySelectorAll('.nav-tab')[1])">
+                        ค้นหาหน่วยเลือกตั้ง 👉
+                    </button>
+                </div>
+            </div>
+
+            <div id="view-map" class="tab-view active">
+                <div class="filter-container">
+                    <div class="search-box">
+                        <select id="districtSelect" class="search-dropdown" onchange="updateUnitDropdown()">
+                            <option value="">📌 เลือกแขวง...</option>
+                            <option value="แขวงคลองเตย">คลองเตย</option>
+                            <option value="แขวงคลองตัน">คลองตัน</option>
+                            <option value="แขวงพระโขนง">พระโขนง</option>
+                        </select>
+                        <select id="unitSelect" class="search-dropdown" style="flex:0.7; border-left:1px solid #ddd;" onchange="searchUnit()">
+                            <option value="">หน่วย...</option>
+                        </select>
+                        <button class="search-btn" onclick="searchUnit()">🔍</button>
+                    </div>
+                    <div class="scroll-btn-container">
+                        <button class="filter-btn" onclick="filterMap('แขวงคลองเตย', this)">คลองเตย</button>
+                        <button class="filter-btn" onclick="filterMap('แขวงคลองตัน', this)">คลองตัน</button>
+                        <button class="filter-btn" onclick="filterMap('แขวงพระโขนง', this)">พระโขนง</button>
+                    </div>
+                </div>
+                <div id="map"></div>
+            </div>
         </div>
 
-        <div id="content" class="hidden">
-            <img id="userImg" src="" class="profile-img" style="width:60px; height:60px;">
-            <h3 id="userName" style="margin: 5px 0;">สวัสดีครับ</h3>
-            <p id="userDetails" style="font-size: 13px; color: #666; margin-bottom: 5px;">...</p>
-            <p id="userRoleBadge" style="display:inline-block; background:#eee; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:bold; color:#555;">Checking...</p>
-            
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        <div id="info-overlay" class="info-popup-overlay" onclick="closePopup(event)">
+            <div class="neon-border-box" onclick="event.stopPropagation()">
+                <div class="info-card">
+                    <div class="drag-handle"></div>
+                    <div class="close-btn-master info-close-pos" onclick="closePopupDirect()">✕</div>
+                    
+                    <div class="mt-4">
+                        <h2 id="p-name" class="text-3xl font-bold text-slate-800 leading-tight pr-12">-</h2>
+                        <p id="p-sub" class="text-xl text-slate-500 mt-2 font-medium">-</p>
+                        <div class="mt-3 inline-flex items-center px-3 py-1 bg-slate-100 rounded-lg text-slate-600 text-lg font-medium border border-slate-200">
+                            <span class="mr-2">🗳️</span> <span id="p-unit"></span>
+                        </div>
+                    </div>
 
-            <button onclick="window.location.href='booking.html'" class="btn">📅 จองห้องประชุม</button>
-            <button onclick="window.location.href='service.html'" class="btn secondary">🔧 แจ้งซ่อม/ปัญหา</button>
-            
-            <button id="btnLeave" onclick="window.location.href='leave.html'" class="btn leave hidden">🏖️ แจ้งวันลา</button>
+                    <div id="p-gallery" class="gallery-scroll mt-4"></div>
+                    
+                    <a id="btn-navigate" href="#" target="_blank" 
+                       class="mt-6 flex items-center justify-center gap-3 w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl text-2xl font-bold shadow-lg shadow-emerald-200 active:scale-95 transition-transform no-underline">
+                        📍 นำทางไปหน่วยเลือกตั้ง
+                    </a>
+
+                    <div class="mt-8 pt-6 border-t border-slate-100 pb-10">
+                        <h3 class="text-2xl font-bold text-slate-800 mb-6">📄 ข้อมูลผู้สมัคร</h3>
+                        <div class="grid grid-cols-1 gap-4">
+                            
+                            <div onclick="openCandidateViewer()" 
+                               class="modern-link-card group cursor-pointer">
+                                <div>
+                                    <span class="block text-2xl font-bold text-slate-800 group-hover:text-pink-600">สมาชิกสภากรุงเทพมหานคร (ส.ก.)</span>
+                                    <span class="text-lg text-pink-500 font-medium">● บัตรเลือกตั้งสีชมพู</span>
+                                </div>
+                                <span class="text-3xl text-slate-300">➜</span>
+                            </div>
+
+                            <div onclick="openCandidate2Viewer()" 
+                               class="modern-link-card group cursor-pointer">
+                                <div>
+                                    <span class="block text-2xl font-bold text-slate-800 group-hover:text-emerald-700">ผู้ว่าราชการกรุงเทพมหานคร</span>
+                                    <span class="text-lg text-emerald-600 font-medium">● บัตรเลือกตั้งสีเขียว</span>
+                                </div>
+                                <span class="text-3xl text-slate-300">➜</span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 mt-2">
+                                <div onclick="openPdfViewer('https://drive.google.com/file/d/1-7tA1dxJxXs_hwgPaboB2Ui7sGXcsKjV/view?usp=sharing', 'สส.บัญชีรายชื่อ')" 
+                                   class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center hover:bg-white hover:shadow-md transition-all cursor-pointer">
+                                    <span class="text-lg font-bold text-slate-600 block">สส.บัญชีรายชื่อ</span>
+                                </div>
+                                <div onclick="openPdfViewer('https://boraservices.bora.dopa.go.th/election/enqelection-local/', 'ตรวจสอบผู้มีสิทธิเลือกตั้ง')" 
+                                   class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center hover:bg-white hover:shadow-md transition-all cursor-pointer">
+                                    <span class="text-lg font-bold text-slate-600 block">ตรวจสอบผู้มีสิทธิเลือกตั้ง</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div id="registerBox" class="hidden">
-            <img id="regProfileImg" src="https://via.placeholder.com/80" class="profile-img">
-            <h3 class="reg-title">📝 ลงทะเบียนสมาชิก</h3>
-            <p style="font-size:13px; color:#666; margin-bottom:15px;">กรุณากรอกข้อมูลให้ครบถ้วนเพื่อยืนยันตัวตน</p>
-            
-            <form id="regForm">
-                <div class="form-group">
-                    <label>ชื่อ-นามสกุลจริง *</label>
-                    <input type="text" id="regRealName" placeholder="เช่น นายสมชาย ใจดี" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>ตำแหน่ง *</label>
-                    <input type="text" id="regPosition" placeholder="เช่น เจ้าพนักงานปกครอง" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>ฝ่าย *</label>
-                    <input type="text" id="regDept" placeholder="เช่น ฝ่ายปกครอง" required>
-                </div>
+        <div id="pdf-viewer" class="pdf-overlay">
+            <div class="pdf-header">
+                <span class="pdf-title" id="pdf-title-text">เอกสาร</span>
+                <div class="close-btn-master" onclick="closePdfViewer()">✕</div>
+            </div>
+            <div class="pdf-container">
+                <iframe id="pdf-frame" class="pdf-frame" src=""></iframe>
+            </div>
+        </div>
 
-                <div class="form-group">
-                    <label>อีเมล (สำหรับรับแจ้งเตือน) *</label>
-                    <input type="email" id="regEmail" placeholder="example@email.com" required>
+        <div id="candidate-viewer" class="pdf-overlay">
+            <div class="pdf-header">
+                <span class="pdf-title text-pink-400">ผู้สมัคร ส.ก. เขตคลองเตย</span>
+                <div class="close-btn-master" onclick="closeCandidateViewer()">✕</div>
+            </div>
+            
+            <div class="candidate-scroll-area">
+                <div class="candidate-container">
+                    <div class="box blue card-fx" onclick="expandCardInLightbox(this)">
+                        <img class="card-banner" src="banner.png" alt="banner">
+                        <h2 class="number">เบอร์ 1</h2>
+                        <div class="circle"></div>
+                        <img class="product" src="candidate/01.png" alt="Candidate 1" onerror="this.onerror=null; this.src='https://placehold.co/250x280/e2e8f0/64748b?text=No+Image'"/>
+                        <h3 class="name">สุชัย พงษ์เพียรชอบ</h3>
+                    </div>
+
+                    <div class="box orange card-fx" onclick="expandCardInLightbox(this)">
+                        <img class="card-banner" src="banner.png" alt="banner">
+                        <h2 class="number">เบอร์ 2</h2>
+                        <div class="circle"></div>
+                        <img class="product" src="candidate/02.png" alt="Candidate 2" onerror="this.onerror=null; this.src='https://placehold.co/250x280/e2e8f0/64748b?text=No+Image'"/>
+                        <h3 class="name">พลอย เตลาน</h3>
+                    </div>
+
+                    <div class="box yellow card-fx" onclick="expandCardInLightbox(this)">
+                        <img class="card-banner" src="banner.png" alt="banner">
+                        <h2 class="number">เบอร์ 3</h2>
+                        <div class="circle"></div>
+                        <img class="product" src="candidate/03.png" alt="Candidate 3" onerror="this.onerror=null; this.src='https://placehold.co/250x280/e2e8f0/64748b?text=No+Image'"/>
+                        <h3 class="name">ศวนงชภรณ์ เงินดี</h3>
+                    </div>
                 </div>
-                
-                <button type="submit" class="btn primary" id="regBtn">ยืนยันการลงทะเบียน</button>
-            </form>
+            </div>
+        </div>
+
+        <div id="candidate2-viewer" class="pdf-overlay">
+            <div class="pdf-header">
+                <span class="pdf-title text-emerald-400">ผู้สมัคร ผู้ว่าฯ กทม.</span>
+                <div class="close-btn-master" onclick="closeCandidate2Viewer()">✕</div>
+            </div>
+            <div class="candidate2-scroll-area">
+                <div class="candidate2-container" id="gov-candidate-list">
+                    </div>
+            </div>
+        </div>
+
+        <div id="card-expanded-overlay" onclick="closeExpandedCard()">
+            <div class="close-btn-master lightbox-close-pos" onclick="closeExpandedCard()">✕</div>
+            <div id="card-expanded-content" onclick="event.stopPropagation()">
+                </div>
+        </div>
+
+        <div id="lightbox" class="lightbox-overlay" onclick="closeLightbox()">
+            <div class="close-btn-master lightbox-close-pos" onclick="closeLightbox()">✕</div>
+            <img id="lightbox-img" class="lightbox-img" src="" alt="" onclick="event.stopPropagation()">
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <script>
-        // --- CONFIGURATION ---
-        const LIFF_ID = '2008629776-KXngaa2q'; // <-- ⚠️ ใส่ LIFF ID เดิมของท่าน
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRPx_QlcVfWiDkzL2qeyr56kPmXwhVvKAKYcT5By62JcZLP6nTmL2e__IgJOQzonk-DA/exec'; // <-- ⚠️ ใส่ Web App URL เดิมของท่าน
+        // ==========================================
+        // GOVERNOR CANDIDATES (18 เบอร์)
+        // ==========================================
+        const govCandidates = [
+            "หม่อมหลวงกรกสิวัฒน์ เกษมศรี", "นายสมัย ละเลิศ", "นายพงษ์ศักดิ์ พัวพรพงษ์", 
+            "นายประทีป วัชรโชคเกษม", "นายอนุชา บูรพชัยศรี", "นายพิศาล กิตติเยาวมาลย์", 
+            "นายภาสพงศ์ ไชยวิริญะวาณิชย์", "นายวีรพจน์ ลือประสิทธิ์สกุล", "นายชัชชาติ สิทธิพันธุ์", 
+            "นายชัยวัฒน์ สถาวรวิจิตร", "นายประยูร ครองยศ", "พล.ต.ท.ชาญเทพ เสสะเวช", 
+            "นายคมสัน พันธุ์วิชาติกุล", "นางมัลลิกา บุญมีตระกูล มหาสุข", "นายโอฬาร ตั้งตราตระกูล", 
+            "นางสาวศรีรัฏน์ ช่างเพ็ชร์", "นางสาวลลนา  มงคลหัสดินทร์", "นายสมชัย  เจริญวรเกียรติ"
+        ];
 
-        let currentUserProfile = null;
-
-        // --- MAIN LOGIC ---
-        async function main() {
-            try {
-                await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) { liff.login(); return; }
-
-                const profile = await liff.getProfile();
-                currentUserProfile = profile;
-                
-                updateStatus('กำลังตรวจสอบสิทธิ์...');
-                const response = await fetch(GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'check_role',
-                        userId: profile.userId
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.status === 'success') {
-                    // --- Login ผ่าน ---
-                    document.getElementById('userName').innerText = data.name;
-                    document.getElementById('userDetails').innerText = data.email;
-                    document.getElementById('userRoleBadge').innerText = `${data.position} - ${data.department}`;
-                    
-                    if(profile.pictureUrl) document.getElementById('userImg').src = profile.pictureUrl;
-                    
-                    // ✅ LOGIC แสดงปุ่มลา (เฉพาะฝ่ายปกครอง หรือ Admin)
-                    const allowedDept = 'ฝ่ายปกครอง';
-                    // เช็คว่ามีคำว่า "ฝ่ายปกครอง" ในชื่อฝ่ายหรือไม่ หรือเป็น ADMIN
-                    if ( (data.department && data.department.includes(allowedDept)) || data.role === 'ADMIN' ) {
-                        document.getElementById('btnLeave').classList.remove('hidden');
-                    }
-                    
-                    showSection('content');
-                    hideSection('status');
-
-                } else if (data.status === 'need_register') {
-                    // --- ต้องลงทะเบียน ---
-                    if(profile.pictureUrl) document.getElementById('regProfileImg').src = profile.pictureUrl;
-                    showSection('registerBox');
-                    hideSection('status');
-                } else {
-                    updateStatus('Error: ' + data.message, true);
-                }
-
-            } catch (err) {
-                updateStatus('เกิดข้อผิดพลาด: ' + err.message, true);
-            }
+        function initGovCandidates() {
+            const container = document.getElementById('gov-candidate-list');
+            if(!container) return;
+            container.innerHTML = "";
+            govCandidates.forEach((name, index) => {
+                let num = index + 1;
+                let numStr = String(num).padStart(2, '0');
+                container.innerHTML += `
+                    <div class="box green card-fx" onclick="expandCardInLightbox(this)">
+                        <img class="card-banner" src="banner.png" alt="banner">
+                        <h2 class="number">เบอร์ ${num}</h2>
+                        <div class="circle"></div>
+                        <img class="product" src="candidate2/${numStr}.png" alt="Candidate ${num}" onerror="this.onerror=null; this.src='https://placehold.co/250x280/e2e8f0/64748b?text=No+Image'"/>
+                        <h3 class="name">${name}</h3>
+                    </div>
+                `;
+            });
         }
 
-        // --- REGISTRATION LOGIC ---
-        document.getElementById('regForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const realName = document.getElementById('regRealName').value.trim();
-            const position = document.getElementById('regPosition').value.trim();
-            const dept = document.getElementById('regDept').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const btn = document.getElementById('regBtn');
-            
-            if(!realName || !position || !dept || !email) {
-                alert("กรุณากรอกข้อมูลให้ครบทุกช่องครับ");
-                return;
-            }
-            
-            btn.disabled = true;
-            btn.innerText = "กำลังบันทึก...";
+        // ==========================================
+        //  APP LOGIC
+        // ==========================================
+        let map, markerGroup;
+        let districtUnitMap = {}; 
 
-            try {
-                const res = await fetch(GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'register_user',
-                        userId: currentUserProfile.userId,
-                        realName: realName,
-                        position: position,
-                        department: dept,
-                        email: email,
-                        pictureUrl: currentUserProfile.pictureUrl
-                    })
-                });
-                const data = await res.json();
-                
-                if(data.status === 'success') {
-                    alert("✅ ลงทะเบียนสำเร็จ!\nสถานะของคุณคือ: GUEST\nกรุณารอ Admin อนุมัติสิทธิ์การใช้งาน");
-                    location.reload(); 
-                } else {
-                    alert("Error: " + data.message);
-                    btn.disabled = false;
-                    btn.innerText = "ยืนยันการลงทะเบียน";
-                }
-            } catch(err) {
-                alert("System Error: " + err.message);
-                btn.disabled = false;
-                btn.innerText = "ลองใหม่อีกครั้ง";
+        // PDF VIEWER LOGIC
+        function openPdfViewer(url, title) {
+            let embedUrl = url;
+            if (url.includes('drive.google.com')) {
+                embedUrl = url.replace(/\/view.*/, '/preview');
             }
+            document.getElementById('pdf-title-text').innerText = title || "เอกสาร";
+            document.getElementById('pdf-frame').src = embedUrl;
+            document.getElementById('pdf-viewer').classList.add('active');
+        }
+        function closePdfViewer() {
+            document.getElementById('pdf-viewer').classList.remove('active');
+            setTimeout(() => { document.getElementById('pdf-frame').src = ""; }, 300);
+        }
+
+        // ==========================================
+        // CANDIDATE VIEWER LOGIC (NEW)
+        // ==========================================
+        function openCandidateViewer() {
+            document.getElementById('candidate-viewer').classList.add('active');
+            
+            // เปิดเอฟเฟกต์ 3D ให้กับการ์ดใบเล็กทั้ง 3 ใบ
+            VanillaTilt.init(document.querySelectorAll("#candidate-viewer .box"), {
+                max: 15, speed: 300, easing: "cubic-bezier(.03,.98,.52,.99)", scale: 1.05
+            });
+        }
+        
+        function closeCandidateViewer() {
+            document.getElementById('candidate-viewer').classList.remove('active');
+        }
+
+        function openCandidate2Viewer() {
+            document.getElementById('candidate2-viewer').classList.add('active');
+            VanillaTilt.init(document.querySelectorAll("#candidate2-viewer .box"), {
+                max: 15, speed: 300, easing: "cubic-bezier(.03,.98,.52,.99)", scale: 1.05
+            });
+        }
+        
+        function closeCandidate2Viewer() {
+            document.getElementById('candidate2-viewer').classList.remove('active');
+        }
+
+        // ฟังก์ชันเมื่อผู้ใช้ "คลิกเพื่อขยาย" การ์ด 3D ทั้งใบ
+        function expandCardInLightbox(element) {
+            const container = document.getElementById('card-expanded-content');
+            
+            // ก๊อปปี้โค้ด HTML ของการ์ดใบที่กด
+            container.innerHTML = element.outerHTML; 
+            
+            const clonedCard = container.querySelector('.box');
+            clonedCard.classList.add('box-maxi'); // สั่งให้ขยายขนาด
+            clonedCard.removeAttribute('onclick'); // ป้องกันการกดซ้อนกัน
+            
+            // ฝังเอฟเฟกต์ 3D ให้กับการ์ดใบใหญ่
+            VanillaTilt.init(clonedCard, {
+                max: 15, speed: 300, easing: "cubic-bezier(.03,.98,.52,.99)", scale: 1.05
+            });
+
+            document.getElementById('card-expanded-overlay').classList.add('active');
+        }
+
+        function closeExpandedCard() {
+            document.getElementById('card-expanded-overlay').classList.remove('active');
+            setTimeout(() => {
+                document.getElementById('card-expanded-content').innerHTML = "";
+            }, 300);
+        }
+
+        // --- Standard Logic ---
+        function getSubDistrictColor(details) {
+            if(typeof subDistrictColors === 'undefined') return "#64748b";
+            for (const [name, color] of Object.entries(subDistrictColors)) {
+                if (details.startsWith(name + " ")) return color;
+            }
+            return "#64748b";
+        }
+
+        function checkResponsive() {
+            const isDesktop = window.innerWidth >= 1024;
+            if (isDesktop) {
+                document.body.classList.remove('mobile-mode');
+                if (!document.querySelector('.left-panel-content.desktop-active')) switchDesktopPanel('timeline');
+            } else {
+                document.body.classList.add('mobile-mode');
+            }
+            if (map) setTimeout(() => map.invalidateSize(), 200);
+        }
+
+        function switchTab(tabId, btn) {
+            if (window.innerWidth >= 1024) return;
+            if(btn) { document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + tabId).classList.add('active');
+            if(tabId === 'map' && map) setTimeout(() => { map.invalidateSize(); map.fitBounds(calculateBounds(units)); }, 100);
+        }
+
+        function switchDesktopPanel(panelId) {
+            document.querySelectorAll('.left-panel-content').forEach(el => el.classList.remove('desktop-active'));
+            document.getElementById('view-' + panelId).classList.add('desktop-active');
+            document.querySelectorAll('.desktop-toggle-btn').forEach(btn => {
+                const isTarget = (panelId === 'timeline' && btn.innerText.includes('ปฏิทิน')) || (panelId === 'guide' && btn.innerText.includes('คู่มือ'));
+                if(isTarget) btn.classList.add('active'); else btn.classList.remove('active');
+            });
+        }
+
+        function initTimeline() {
+            const container = document.getElementById('timeline-container');
+            if(typeof timelineData === 'undefined') { container.innerHTML = "<p class='text-center p-4'>Loading Data...</p>"; return; }
+            const now = new Date(); 
+            let html = '';
+            timelineData.forEach(item => {
+                let status = now > item.endDate ? 'done' : (now >= item.startDate ? 'active' : 'future');
+                let statusClass = status === 'done' ? 't-status-done' : (status === 'active' ? 't-status-active' : 't-status-future');
+                let icon = status === 'done' ? '✓' : (status === 'active' ? '⏳' : '•');
+                html += `<div class="timeline-item ${statusClass}"><div class="t-circle">${icon}</div><div class="t-content"><span class="t-date">${item.dateText}</span><h3>${item.title}</h3>${item.desc ? `<p>${item.desc}</p>` : ''}</div></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function calculateBounds(data) {
+            if (!data || data.length === 0) return null;
+            let lats = data.map(u => u.lat), lngs = data.map(u => u.lng);
+            const pad = 0.01; 
+            return L.latLngBounds([Math.min(...lats) - pad, Math.min(...lngs) - pad], [Math.max(...lats) + pad, Math.max(...lngs) + pad]);
+        }
+
+        function initMap() {
+            if(typeof units === 'undefined') return;
+            const strictBounds = calculateBounds(units);
+            map = L.map('map', { zoomControl: false, attributionControl: false, maxBounds: strictBounds, maxBoundsViscosity: 1.0 });
+            L.control.zoom({ position: 'bottomright' }).addTo(map);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+            if(strictBounds) map.fitBounds(strictBounds);
+            markerGroup = L.layerGroup().addTo(map);
+            renderMarkers(units);
+        }
+
+        function renderMarkers(data) {
+            if (markerGroup) markerGroup.clearLayers();
+            data.forEach(unit => {
+                let markerBg = getSubDistrictColor(unit.details_range);
+                let textColor = (markerBg === "#ffc107" || markerBg === "#fbbf24") ? "#1e293b" : "white";
+                let label = unit.details_range.includes("หน่วยที่") ? unit.details_range.split("หน่วยที่")[1].trim() : "-";
+                let customIcon = L.divIcon({
+                    className: 'custom-pin',
+                    html: `<div style="background-color: ${markerBg}; color: ${textColor}; padding: 0.3rem 0.8rem; border-radius: 6px; border: 2px solid white; font-size: 1.2rem; font-weight: bold; width: fit-content; min-width: 3rem; text-align: center; white-space: nowrap; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">${label}</div>`,
+                    iconSize: [30, 30], iconAnchor: [15, 15]
+                });
+                L.marker([unit.lat, unit.lng], { icon: customIcon }).on('click', () => openPopup(unit)).addTo(markerGroup);
+            });
+        }
+
+        function initDistrictData() {
+            if(typeof units === 'undefined') return;
+            districtUnitMap = {};
+            units.forEach(u => {
+                let parts = u.details_range.split("หน่วยที่");
+                if(parts.length < 2) return;
+                let district = parts[0].trim(), rangeStr = parts[1].trim();
+                if(!districtUnitMap[district]) districtUnitMap[district] = new Set();
+                rangeStr.split(",").forEach(r => {
+                    r = r.trim();
+                    if(r.includes("-")) {
+                        let [start, end] = r.split("-").map(x => parseInt(x));
+                        for(let i=start; i<=end; i++) districtUnitMap[district].add(i);
+                    } else districtUnitMap[district].add(parseInt(r));
+                });
+            });
+        }
+
+        function updateUnitDropdown() {
+            const ds = document.getElementById('districtSelect'), us = document.getElementById('unitSelect');
+            us.innerHTML = '<option value="">หน่วยที่...</option>';
+            if(!ds.value || !districtUnitMap[ds.value]) return;
+            Array.from(districtUnitMap[ds.value]).sort((a,b) => a - b).forEach(u => {
+                const opt = document.createElement('option'); opt.value = u; opt.innerText = u; us.appendChild(opt);
+            });
+        }
+
+        function searchUnit() {
+            const ds = document.getElementById('districtSelect').value, uv = document.getElementById('unitSelect').value;
+            if (!ds || !uv) return;
+            const un = parseInt(uv);
+            const found = units.find(u => {
+                if (!u.details_range.startsWith(ds + " ")) return false;
+                const part = u.details_range.split("หน่วยที่")[1];
+                return part ? part.split(",").some(p => {
+                    if (p.includes("-")) { const [min, max] = p.split("-").map(n => parseInt(n)); return un >= min && un <= max; }
+                    return parseInt(p) === un;
+                }) : false;
+            });
+            if (found) {
+                renderMarkers(units.filter(u => u.details_range.startsWith(ds + " ")));
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    if (b.getAttribute('onclick').includes(`'${ds}'`)) {
+                        b.classList.add('active'); const ac = getSubDistrictColor(ds); b.style.backgroundColor = ac; b.style.color = (ac === "#ffc107" || ac === "#fbbf24") ? "#1e293b" : "white";
+                    } else { b.classList.remove('active'); b.style.backgroundColor = 'white'; b.style.color = '#64748b'; }
+                });
+                map.setView([found.lat, found.lng], 18); openPopup(found);
+            } else alert("ไม่พบข้อมูลหน่วยเลือกตั้งที่ระบุ");
+        }
+
+        function filterMap(type, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => { b.classList.remove('active'); b.style.backgroundColor = 'white'; b.style.color = '#64748b'; }); 
+            btn.classList.add('active');
+            const ac = getSubDistrictColor(type); btn.style.backgroundColor = ac; btn.style.color = (ac === "#ffc107" || ac === "#fbbf24") ? "#1e293b" : "white";
+            const fu = units.filter(u => u.details_range.startsWith(type + " "));
+            renderMarkers(fu);
+            if (fu.length > 0) map.fitBounds(calculateBounds(fu), { padding: [50, 50] });
+        }
+
+        function openPopup(data) {
+            document.getElementById('p-name').innerText = data.name;
+            document.getElementById('p-sub').innerText = data.details_range;
+            document.getElementById('p-unit').innerText = data.unit_count;
+            
+            const gs = document.getElementById('p-gallery');
+            gs.innerHTML = ""; 
+
+            let folderId = String(data.id).padStart(3, '0');
+            let imgIndex = 1;
+
+            function loadNextImage() {
+                let imgNumStr = String(imgIndex).padStart(3, '0'); 
+                let src = `pic/${folderId}/${imgNumStr}.jpg`;
+                
+                let img = new Image();
+                img.onload = function() {
+                    let imgEl = document.createElement('img');
+                    imgEl.src = src;
+                    imgEl.onclick = () => openLightbox(src);
+                    gs.appendChild(imgEl);
+                    
+                    imgIndex++;
+                    loadNextImage(); 
+                };
+                img.onerror = function() {};
+                img.src = src; 
+            }
+            
+            loadNextImage(); 
+
+            // แก้ไขลิงก์ระบบนำทางของ Google Maps ให้ถูกต้อง
+            document.getElementById('btn-navigate').href = `https://www.google.com/maps/search/?api=1&query=${data.lat},${data.lng}`;
+            document.getElementById('info-overlay').classList.add('visible');
+        }
+
+        function closePopup(e) { if (e.target.id === 'info-overlay') closePopupDirect(); }
+        function closePopupDirect() { document.getElementById('info-overlay').classList.remove('visible'); }
+        
+        function openLightbox(src) { 
+            document.getElementById('lightbox-img').src = src; 
+            document.getElementById('lightbox').classList.add('active'); 
+        }
+        function closeLightbox() { document.getElementById('lightbox').classList.remove('active'); }
+
+        window.addEventListener('load', () => { 
+            checkResponsive(); 
+            initGovCandidates(); // เรียกใช้งานการสร้างรายชื่อแคนดิเดตผู้ว่าฯ
+            setTimeout(() => { 
+                initTimeline(); 
+                initMap(); 
+                initDistrictData();
+                if (map) map.invalidateSize(); 
+            }, 100);
         });
-
-        // --- HELPER ---
-        function updateStatus(msg, isError = false) {
-            const el = document.getElementById('status');
-            el.innerHTML = `<div class="loader"></div><p>${msg}</p>`;
-            if(isError) el.innerHTML = `<p style="color:red">❌ ${msg}</p>`;
-        }
-        function showSection(id) { document.getElementById(id).classList.remove('hidden'); }
-        function hideSection(id) { document.getElementById(id).classList.add('hidden'); }
-
-        main();
+        window.addEventListener('resize', checkResponsive);
     </script>
 </body>
 </html>
