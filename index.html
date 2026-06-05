@@ -207,7 +207,11 @@
             font-size: min(1.05vw, 4.5px); 
         }
 
-        /* BANNER OVERLAY - แก้ไขให้เป็นชิ้นเล็กและคงสัดส่วนเดิม 1/5 ของความสูงการ์ด */
+        /* ลายน้ำด้านหลัง (Background text) - เอาออกแล้วตามคำสั่ง */
+        /* .box::before { ... } */
+        /* .box::after { ... } */
+        
+        /* BANNER OVERLAY - แก้ไขให้คงสัดส่วนเดิม 100% ไม่ผิดเพี้ยน */
         .box .card-banner {
             display: none;
         }
@@ -216,14 +220,11 @@
             position: absolute;
             bottom: 0; /* ให้อยู่ล่างสุด */
             left: 0;
-            width: 100%;
-            height: 20%; /* สูงประมาณ 1/5 ของการ์ด */
-            object-fit: contain; /* คงอัตราส่วนรูปภาพเดิม ไม่ให้เพี้ยน */
-            object-position: bottom center; /* จัดให้รูปชิดขอบล่างตรงกลาง */
+            width: 100%; /* กว้างเต็มการ์ด */
+            height: auto; /* ความสูงปรับอัตโนมัติตามสัดส่วนจริงของรูป (ไม่เพี้ยนแน่นอน) */
             border-bottom-left-radius: 2em; /* โค้งตามมุมการ์ดล่างซ้าย */
             border-bottom-right-radius: 2em; /* โค้งตามมุมการ์ดล่างขวา */
             z-index: 50; /* อยู่หน้าสุด */
-            opacity: 1; /* ไม่จาง */
             pointer-events: none;
         }
         
